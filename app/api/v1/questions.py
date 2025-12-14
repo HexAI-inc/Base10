@@ -1,6 +1,7 @@
 """Questions API endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 import json
 
@@ -110,6 +111,6 @@ def get_random_questions(
     if difficulty:
         query = query.filter(Question.difficulty == difficulty)
     
-    questions = query.order_by(db.func.random()).limit(count).all()
+    questions = query.order_by(func.random()).limit(count).all()
     
     return questions
