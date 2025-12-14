@@ -1,5 +1,5 @@
 """Question model for WAEC practice questions."""
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, DateTime, func
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import enum
