@@ -58,6 +58,7 @@ class Question(Base):
     
     # Relationships
     attempts = relationship("Attempt", back_populates="question")
+    reports = relationship("QuestionReport", back_populates="question")
     
     # Index for delta sync queries
     __table_args__ = (

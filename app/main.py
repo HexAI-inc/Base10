@@ -6,8 +6,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import engine
 from app.db.base import Base
-from app.api.v1 import auth, questions, sync
-from app.api.v1 import leaderboard
+from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system
 
 
 @asynccontextmanager
@@ -64,10 +63,22 @@ app.add_middleware(
 )
 
 # Include API routers
+# Authentication & Account Management
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(recovery.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(profile.router, prefix="/api/v1/auth", tags=["Authentication"])
+
+# Content & Learning
 app.include_router(questions.router, prefix="/api/v1/questions", tags=["Questions"])
+app.include_router(reports.router, prefix="/api/v1/questions", tags=["Questions"])
+app.include_router(flashcards.router, prefix="/api/v1/flashcards", tags=["Flashcards"])
+
+# Sync & Leaderboard
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Offline Sync"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["Leaderboard"])
+
+# System & Config
+app.include_router(system.router, prefix="/api/v1/system", tags=["System"])
 
 
 @app.get("/")
