@@ -1,0 +1,133 @@
+name: base10-backend
+region: nyc
+
+services:
+  - name: api
+    # GitHub repo integration
+    github:
+      repo: HexAI-inc/Base10
+      branch: main
+      deploy_on_push: true
+    
+    dockerfile_path: Dockerfile
+    
+    # Environment variables
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+        # Set via DO dashboard after creating app
+        value: "REPLACE_WITH_YOUR_DATABASE_URL"
+      
+      - key: REDIS_URL
+        scope: RUN_TIME
+        type: SECRET
+        # OPTIONAL for MVP - app works without Redis (uses in-memory cache)
+        # Get free Redis from: railway.app or render.com
+        value: "redis://localhost:6379/0"  # Will fallback to in-memory if unavailable
+      
+      - key: SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ""  # Set via DO dashboard
+      
+      - key: ALGORITHM
+        scope: RUN_TIME
+        value: "HS256"
+      
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        scope: RUN_TIME
+        value: "10080"
+      
+      - key: ENVIRONMENT
+        scope: RUN_TIME
+        value: "production"
+      # Storage configuration - LOCAL FOR MVP (FREE!)
+      - key: STORAGE_BACKEND
+        scope: RUN_TIME
+        value: "local"  # Change to "s3" later when you have users
+      
+      - key: LOCAL_STORAGE_PATH
+        scope: RUN_TIME
+        value: "./media"
+      
+      # Spaces config (add later when needed)
+      # - key: S3_BUCKET_NAME
+      #   scope: RUN_TIME
+      #   value: "base10-media"
+        value: "base10-media.nyc3.cdn.digitaloceanspaces.com"
+      
+      # CORS
+      - key: BACKEND_CORS_ORIGINS
+        scope: RUN_TIME
+        value: '["https://base10.education","http://localhost:3000"]'
+      
+      # Optional: Twilio (Phase 3)
+      - key: TWILIO_ACCOUNT_SID
+        scope: RUN_TIME
+        type: SECRET
+        value: ""
+      
+      - key: TWILIO_AUTH_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+        value: ""
+      
+      - key: TWILIO_PHONE_NUMBER
+        scope: RUN_TIME
+        value: ""
+      
+      # Optional: Analytics
+      - key: POSTHOG_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ""
+      
+      - key: POSTHOG_HOST
+        scope: RUN_TIME
+        value: "https://app.posthog.com"
+      
+      # Google AI
+      - key: GOOGLE_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ""  # Set via DO dashboard
+      
+      # Optional: Email (Phase 2)
+      - key: SENDGRID_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ""
+      
+      - key: SENDGRID_FROM_EMAIL
+        scope: RUN_TIME
+        value: "noreply@base10.education"
+      
+      # Optional: Firebase (Phase 2)
+      - key: FIREBASE_CREDENTIALS_PATH
+        scope: RUN_TIME
+        value: "/app/firebase-adminsdk.json"
+    
+    # Resource configuration - MINIMAL FOR MVP
+    instance_count: 1
+    instance_size_slug: basic-xxs  # $5/month - 512MB RAM (or try 'free' tier first!)
+    
+    http_port: 8080
+    
+    # Health check configuration
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    
+    # Routes
+    routes:
+      - path: /
+
+# Optional: Add custom domain later
+# domains:
+#   - domain: api.base10.education
+#     type: PRIMARY
