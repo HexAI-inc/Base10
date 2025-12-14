@@ -128,6 +128,46 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     )
 
 
+@router.post("/login/json", response_model=Token)
+def login_json(login_data: UserLogin, db: Session = Depends(get_db)):
+    """
+    Login with phone or email using JSON payload.
+    
+    Alternative to OAuth2 form login for modern clients.
+    Returns 7-day token for offline usage.
+    """
+    # Try to find user by email or phone
+    user = db.query(User).filter(
+        (User.email == login_data.identifier) | (User.phone_number == login_data.identifier)
+    ).first()
+    
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Account is inactive")
+    
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.commit()
+    
+    # Create access token
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.from_orm(user)
+    )
+
+
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user profile."""
