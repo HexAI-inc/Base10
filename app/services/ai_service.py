@@ -141,6 +141,7 @@ async def chat_with_ai(
         return response_text, suggestions
     
     except Exception as e:
+        print(f"AI chat generation failed: {str(e)}")  # Debug logging
         raise Exception(f"AI generation failed: {str(e)}")
 
 
