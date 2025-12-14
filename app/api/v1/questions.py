@@ -113,4 +113,10 @@ def get_random_questions(
     
     questions = query.order_by(func.random()).limit(count).all()
     
+    if not questions:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No questions found for subject: {subject}"
+        )
+    
     return questions
