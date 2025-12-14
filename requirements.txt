@@ -1,0 +1,45 @@
+# FastAPI Core
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+pydantic-settings==2.1.0
+
+# Data Validation
+pydantic==2.5.3
+email-validator==2.1.0
+
+# SMS Integration (for Phase 3)
+twilio==8.11.0
+
+# Redis (for SMS session state)
+redis==5.0.1
+
+# CORS
+python-jose==3.3.0
+
+# Fuzzy Matching
+python-Levenshtein==0.25.0
+
+# Storage & CDN
+boto3==1.34.34  # AWS S3
+cloudinary==1.38.0  # Image optimization
+
+# Analytics
+posthog==3.3.4  # Product analytics
+
+# Background Jobs & Scheduling
+apscheduler==3.10.4  # Cron jobs for streaks, reminders, leaderboards
+
+# Testing
+pytest==7.4.4
+httpx==0.26.0
