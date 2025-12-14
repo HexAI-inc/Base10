@@ -104,8 +104,8 @@ class FlashcardReview(Base):
     
     # Index for "due today" queries
     __table_args__ = (
-        Index('idx_next_review', 'user_id', 'next_review_date'),
-        Index('idx_flashcard_updated', 'updated_at'),
+        Index('idx_flashcard_next_review', 'user_id', 'next_review_date'),
+        Index('idx_flashcard_review_updated', 'updated_at'),
     )
     
     def __repr__(self):
