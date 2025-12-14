@@ -16,29 +16,9 @@ from app.models import (
     Classroom, Assignment
 )
 
-
-# Import Base and all models for autogenerate
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from app.models import (
-    Base, User, Question, Attempt, OTP, QuestionReport,
-    FlashcardDeck, Flashcard, FlashcardReview,
-    Classroom, Assignment
-)
-
-
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
-# Get DATABASE_URL from environment or use default
-config.set_main_option(
-    'sqlalchemy.url',
-    os.getenv('DATABASE_URL', 'sqlite:///./test.db')
-)
-
 
 # Get DATABASE_URL from environment or use default
 config.set_main_option(

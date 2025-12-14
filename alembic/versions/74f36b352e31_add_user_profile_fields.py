@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -18,21 +19,52 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def column_exists(table_name, column_name):
+    """Check if a column exists in a table."""
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = [col['name'] for col in inspector.get_columns(table_name)]
+    return column_name in columns
+
+
 def upgrade() -> None:
     # Add user profile fields for content filtering and engagement tracking
-    op.add_column('users', sa.Column('education_level', sa.String(length=50), nullable=True))
-    op.add_column('users', sa.Column('target_exam_date', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('users', sa.Column('preferred_subjects', sa.String(length=500), nullable=True))
-    op.add_column('users', sa.Column('has_app_installed', sa.Boolean(), server_default='false', nullable=False))
-    op.add_column('users', sa.Column('study_streak', sa.Integer(), server_default='0', nullable=False))
-    op.add_column('users', sa.Column('last_activity_date', sa.DateTime(timezone=True), nullable=True))
+    # Only add columns if they don't already exist
+    if not column_exists('users', 'education_level'):
+        op.add_column('users', sa.Column('education_level', sa.String(length=50), nullable=True))
+    
+    if not column_exists('users', 'target_exam_date'):
+        op.add_column('users', sa.Column('target_exam_date', sa.DateTime(timezone=True), nullable=True))
+    
+    if not column_exists('users', 'preferred_subjects'):
+        op.add_column('users', sa.Column('preferred_subjects', sa.String(length=500), nullable=True))
+    
+    if not column_exists('users', 'has_app_installed'):
+        op.add_column('users', sa.Column('has_app_installed', sa.Boolean(), server_default='false', nullable=False))
+    
+    if not column_exists('users', 'study_streak'):
+        op.add_column('users', sa.Column('study_streak', sa.Integer(), server_default='0', nullable=False))
+    
+    if not column_exists('users', 'last_activity_date'):
+        op.add_column('users', sa.Column('last_activity_date', sa.DateTime(timezone=True), nullable=True))
 
 
 def downgrade() -> None:
     # Remove user profile fields
-    op.drop_column('users', 'last_activity_date')
-    op.drop_column('users', 'study_streak')
-    op.drop_column('users', 'has_app_installed')
-    op.drop_column('users', 'preferred_subjects')
-    op.drop_column('users', 'target_exam_date')
-    op.drop_column('users', 'education_level')
+    if column_exists('users', 'last_activity_date'):
+        op.drop_column('users', 'last_activity_date')
+    
+    if column_exists('users', 'study_streak'):
+        op.drop_column('users', 'study_streak')
+    
+    if column_exists('users', 'has_app_installed'):
+        op.drop_column('users', 'has_app_installed')
+    
+    if column_exists('users', 'preferred_subjects'):
+        op.drop_column('users', 'preferred_subjects')
+    
+    if column_exists('users', 'target_exam_date'):
+        op.drop_column('users', 'target_exam_date')
+    
+    if column_exists('users', 'education_level'):
+        op.drop_column('users', 'education_level')
