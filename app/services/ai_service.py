@@ -38,29 +38,26 @@ async def generate_explanation(
     if not GEMINI_AVAILABLE or not model:
         # Fallback explanation
         return (
-            f"The correct answer is option {chr(65 + question.correct_option)}. "
+            f"The correct answer is option {chr(65 + question.correct_index)}. "
             f"{question.explanation or 'Review the key concepts for this topic.'}"
         )
     
     # Build prompt for Gemini
+    import json
+    options = json.loads(question.options_json)
     options_text = "\n".join([
         f"{chr(65 + i)}) {opt}"
-        for i, opt in enumerate([
-            question.option_a,
-            question.option_b,
-            question.option_c,
-            question.option_d
-        ])
+        for i, opt in enumerate(options)
     ])
     
     prompt = f"""You are a patient West African exam tutor helping a student who got a question wrong.
 
-Question: {question.question_text}
+Question: {question.content}
 
 Options:
 {options_text}
 
-Correct Answer: {chr(65 + question.correct_option)}
+Correct Answer: {chr(65 + question.correct_index)}
 
 Student's Answer: {chr(65 + student_answer)}
 
@@ -70,7 +67,7 @@ Provide a clear, encouraging explanation that:
 1. Acknowledges their answer
 2. Explains why it's incorrect
 3. Teaches the correct concept
-4. Uses simple language appropriate for {question.education_level}
+4. Uses simple language appropriate for {question.difficulty.value} level
 5. Relates to West African WAEC exam standards
 
 Keep it under 150 words. Be encouraging!"""
@@ -82,7 +79,7 @@ Keep it under 150 words. Be encouraging!"""
         # Fallback if Gemini fails
         return (
             f"You selected option {chr(65 + student_answer)}, but the correct answer is "
-            f"option {chr(65 + question.correct_option)}. "
+            f"option {chr(65 + question.correct_index)}. "
             f"{question.explanation or 'Please review this topic carefully.'}"
         )
 

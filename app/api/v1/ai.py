@@ -91,10 +91,10 @@ async def explain_answer(
         raise HTTPException(status_code=404, detail="Question not found")
     
     # Check if student's answer is correct (shouldn't request explanation for correct answers)
-    if request.student_answer == question.correct_option:
+    if request.student_answer == question.correct_index:
         return ExplainResponse(
             explanation="Actually, your answer is correct! Great job understanding this concept.",
-            correct_answer=question.correct_option,
+            correct_answer=question.correct_index,
             key_concepts=[question.topic],
             difficulty=question.difficulty.value
         )
@@ -116,11 +116,11 @@ async def explain_answer(
         )
     except Exception as e:
         # Fallback on any error
-        explanation_text = f"The correct answer is option {chr(65 + question.correct_option)}. {question.explanation or 'Review this topic for better understanding.'}"
+        explanation_text = f"The correct answer is option {chr(65 + question.correct_index)}. {question.explanation or 'Review this topic for better understanding.'}"
     
     return ExplainResponse(
         explanation=explanation_text,
-        correct_answer=question.correct_option,
+        correct_answer=question.correct_index,
         key_concepts=[question.topic, question.subject.value],
         difficulty=question.difficulty.value
     )

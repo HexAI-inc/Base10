@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     POSTHOG_HOST: str = "https://app.posthog.com"
     TIMESCALE_URL: str = ""  # PostgreSQL with TimescaleDB extension
     
+    # Google AI
+    GOOGLE_API_KEY: str = ""
+    
     # Email (Phase 2)
     SENDGRID_API_KEY: str = ""
     SENDGRID_FROM_EMAIL: str = ""
