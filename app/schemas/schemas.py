@@ -109,6 +109,15 @@ class QuestionBulkSync(BaseModel):
 
 # ============= Attempt/Progress Schemas =============
 
+class NetworkTypeEnum(str, Enum):
+    """Network type when attempt was made."""
+    WIFI = "wifi"
+    FOUR_G = "4g"
+    THREE_G = "3g"
+    TWO_G = "2g"
+    OFFLINE = "offline"
+
+
 class AttemptCreate(BaseModel):
     """Schema for creating an attempt (from mobile offline data)."""
     question_id: int
@@ -116,6 +125,12 @@ class AttemptCreate(BaseModel):
     is_correct: bool
     attempted_at: datetime
     device_id: Optional[str] = None
+    
+    # Psychometric fields (optional for backward compatibility)
+    time_taken_ms: Optional[int] = Field(None, ge=0, description="Time taken in milliseconds")
+    confidence_level: Optional[int] = Field(None, ge=1, le=5, description="1=Guessing, 5=Certain")
+    network_type: Optional[NetworkTypeEnum] = Field(None, description="Network type during attempt")
+    app_version: Optional[str] = Field(None, max_length=20, description="App version, e.g., 1.2.3")
 
 
 class AttemptResponse(BaseModel):

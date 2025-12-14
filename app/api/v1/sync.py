@@ -1,7 +1,7 @@
 """Offline sync API - The heart of the offline-first architecture."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, Integer
 from datetime import datetime, timedelta
 from typing import List, Dict
 import json
@@ -88,7 +88,12 @@ def sync_push_attempts(
                 srs_interval=interval,
                 srs_ease_factor=ease,
                 srs_repetitions=reps,
-                next_review_date=next_date
+                next_review_date=next_date,
+                # Psychometric fields
+                time_taken_ms=attempt_data.time_taken_ms,
+                confidence_level=attempt_data.confidence_level,
+                network_type=attempt_data.network_type,
+                app_version=attempt_data.app_version
             )
             
             db.add(new_attempt)
@@ -242,7 +247,7 @@ def _calculate_weak_topics(db: Session, user_id: int, threshold: float = 0.5) ->
     results = db.query(
         Question.topic,
         func.count(Attempt.id).label('total'),
-        func.sum(func.cast(Attempt.is_correct, db.Integer)).label('correct')
+        func.sum(func.cast(Attempt.is_correct, Integer)).label('correct')
     ).join(
         Attempt, Attempt.question_id == Question.id
     ).filter(
@@ -265,7 +270,7 @@ def _calculate_weak_topics(db: Session, user_id: int, threshold: float = 0.5) ->
 def _calculate_user_stats(db: Session, user_id: int) -> Dict:
     """Calculate overall user statistics."""
     total = db.query(func.count(Attempt.id)).filter(Attempt.user_id == user_id).scalar() or 0
-    correct = db.query(func.sum(func.cast(Attempt.is_correct, db.Integer))).filter(
+    correct = db.query(func.sum(func.cast(Attempt.is_correct, Integer))).filter(
         Attempt.user_id == user_id
     ).scalar() or 0
     
@@ -294,7 +299,7 @@ def get_user_stats(
     subject_stats = db.query(
         Question.subject,
         func.count(Attempt.id).label('total'),
-        func.sum(func.cast(Attempt.is_correct, db.Integer)).label('correct')
+        func.sum(func.cast(Attempt.is_correct, Integer)).label('correct')
     ).join(
         Attempt, Attempt.question_id == Question.id
     ).filter(

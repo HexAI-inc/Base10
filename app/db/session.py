@@ -3,12 +3,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 
+# Engine configuration based on database type
+engine_args = {
+    "pool_pre_ping": True,  # Verify connections before using
+}
+
+# PostgreSQL-specific settings (not supported by SQLite)
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_args.update({
+        "pool_size": 10,        # Connection pool for scalability
+        "max_overflow": 20
+    })
+
 # Create engine
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_size=10,        # Connection pool for scalability
-    max_overflow=20
+    **engine_args
 )
 
 # Session factory

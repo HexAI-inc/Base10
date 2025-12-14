@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import engine
 from app.db.base import Base
-from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system
+from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system, teacher, ai, assets, billing
 
 
 @asynccontextmanager
@@ -73,9 +73,19 @@ app.include_router(questions.router, prefix="/api/v1/questions", tags=["Question
 app.include_router(reports.router, prefix="/api/v1/questions", tags=["Questions"])
 app.include_router(flashcards.router, prefix="/api/v1/flashcards", tags=["Flashcards"])
 
+# AI & Intelligence (NEW - Strategic Addition #1)
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI Tutor"])
+
+# Assets & Optimization (NEW - Strategic Addition #2)
+app.include_router(assets.router, prefix="/api/v1/assets", tags=["Assets"])
+
+# Billing & Monetization (NEW - Strategic Addition #3)
+app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
+
 # Sync & Leaderboard
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Offline Sync"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["Leaderboard"])
+app.include_router(teacher.router, prefix="/api/v1/teacher", tags=["Teacher"])
 
 # System & Config
 app.include_router(system.router, prefix="/api/v1/system", tags=["System"])

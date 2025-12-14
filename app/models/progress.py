@@ -48,6 +48,12 @@ class Attempt(Base):
     device_id = Column(String, nullable=True)  # UUID from mobile device
     synced_at = Column(DateTime(timezone=True), nullable=True)  # When received by server
     
+    # Psychometric Data (Deep Learning Analytics)
+    time_taken_ms = Column(Integer, nullable=True)  # How long to answer (ms)
+    confidence_level = Column(Integer, nullable=True)  # 1 (Guessing) to 5 (Certain)
+    network_type = Column(String(20), nullable=True)  # 'wifi', '4g', '3g', 'offline'
+    app_version = Column(String(20), nullable=True)  # e.g., '1.2.3' for bug tracking
+    
     # Relationships
     user = relationship("User", back_populates="attempts")
     question = relationship("Question", back_populates="attempts")
