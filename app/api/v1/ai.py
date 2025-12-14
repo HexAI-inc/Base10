@@ -111,7 +111,7 @@ async def explain_answer(
         # Fallback explanation if AI service not configured
         explanation_text = (
             f"You selected option {chr(65 + request.student_answer)}, but the correct answer is "
-            f"option {chr(65 + question.correct_option)}. "
+            f"option {chr(65 + question.correct_index)}. "
             f"{question.explanation or 'Please review the key concepts for this topic.'}"
         )
     except Exception as e:
