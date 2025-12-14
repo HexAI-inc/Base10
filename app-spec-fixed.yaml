@@ -1,0 +1,71 @@
+name: stingray-app
+region: lon
+
+services:
+  - name: base10
+    github:
+      repo: HexAI-inc/Base10
+      branch: main
+      deploy_on_push: true
+    
+    dockerfile_path: Dockerfile
+    source_dir: /
+    
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: EV[1:rPJcq5gPV2XX1nLNvpxmyaLNRipOrTMw:oEDHZMIO1RRDOj1zG5q/a80dFkVKEB2Ob5iJp5qwsItkmYii76Z6M5Qt0aEiOBKVXFh2NksM4lRlQtxDAXgcgHsM7sdSo8N5I9GXxVkfqIFbWKoS4QhoUxrJXIbmwHbnJ3ruRr0KC/PCFZuGhB0ecSUZBqKBPjboJWgZfuC5vmhrcjXkKGRyt0tGdfXuF9aG/mQ=]
+      
+      - key: SECRET_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: EV[1:1P10VQsjTmHJn16rDlw/+tyearEgv4IC:9bQLKvP0Fk9fcpoUJtG3esY9W8nSO4pK5mAeYB5QKtZd+OW5r84wFvtznLJ9ozlbTJAgGZhHUCj9/UPnoxFTVD0bJ+KNK82NAoONmti+4886]
+      
+      - key: REDIS_URL
+        scope: RUN_AND_BUILD_TIME
+        value: redis://localhost:6379/0
+      
+      - key: STORAGE_BACKEND
+        scope: RUN_AND_BUILD_TIME
+        value: local
+      
+      - key: LOCAL_STORAGE_PATH
+        scope: RUN_AND_BUILD_TIME
+        value: ./media
+      
+      - key: ALGORITHM
+        scope: RUN_AND_BUILD_TIME
+        value: HS256
+      
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        scope: RUN_AND_BUILD_TIME
+        value: "10080"
+      
+      - key: ENVIRONMENT
+        scope: RUN_AND_BUILD_TIME
+        value: production
+      
+      - key: BACKEND_CORS_ORIGINS
+        scope: RUN_AND_BUILD_TIME
+        value: '["*"]'
+    
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    
+    http_port: 8000
+    
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+features:
+  - buildpack-stack=ubuntu-22

@@ -61,7 +61,7 @@ class Question(Base):
     
     # Index for delta sync queries
     __table_args__ = (
-        Index('idx_updated_at', 'updated_at'),
+        Index('idx_questions_updated_at', 'updated_at'),
     )
     
     def __repr__(self):

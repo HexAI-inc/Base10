@@ -56,7 +56,7 @@ class Attempt(Base):
     __table_args__ = (
         Index('idx_user_question', 'user_id', 'question_id'),
         Index('idx_user_date', 'user_id', 'attempted_at'),
-        Index('idx_updated_at', 'updated_at'),  # Critical for delta sync
+        Index('idx_progress_updated_at', 'updated_at'),  # Critical for delta sync
         Index('idx_next_review', 'user_id', 'next_review_date'),  # SRS review queries
     )
     
