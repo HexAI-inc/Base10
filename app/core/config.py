@@ -1,6 +1,7 @@
 """Core configuration using Pydantic Settings for environment variables."""
 from pydantic_settings import BaseSettings
 from typing import List
+import json
 
 
 class Settings(BaseSettings):
@@ -18,11 +19,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days (offline-first needs longer tokens)
     
     # CORS - Allow web app and mobile app
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5000"]
+    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000"]'
     
     @property
     def CORS_ORIGINS(self) -> List[str]:
-        return self.BACKEND_CORS_ORIGINS
+        """Parse CORS origins from JSON string or return default."""
+        try:
+            if isinstance(self.BACKEND_CORS_ORIGINS, str):
+                return json.loads(self.BACKEND_CORS_ORIGINS)
+            return self.BACKEND_CORS_ORIGINS
+        except:
+            return ["http://localhost:3000", "http://localhost:5000", "*"]
     
     # SMS (Phase 3)
     TWILIO_ACCOUNT_SID: str = ""
