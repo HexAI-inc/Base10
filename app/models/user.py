@@ -34,6 +34,27 @@ class User(Base):
     target_exam_date = Column(DateTime(timezone=True), nullable=True)  # When they're taking the exam
     preferred_subjects = Column(String(500), nullable=True)  # JSON array: ["Mathematics", "Physics"]
     
+    # Extended profile fields
+    avatar_url = Column(String(500), nullable=True)  # Profile photo URL
+    bio = Column(String(500), nullable=True)  # About/bio section
+    country = Column(String(100), nullable=True)  # Country code or name
+    location = Column(String(200), nullable=True)  # City/region
+    
+    # Learning preferences
+    learning_style = Column(String(50), nullable=True)  # "visual", "auditory", "kinesthetic", "reading_writing"
+    study_time_preference = Column(String(50), nullable=True)  # "morning", "afternoon", "evening", "night"
+    
+    # Notification preferences (JSON)
+    notification_settings = Column(String(1000), nullable=True)  # JSON: {"email": true, "sms": false, "push": true}
+    
+    # Privacy settings (JSON)
+    privacy_settings = Column(String(1000), nullable=True)  # JSON: {"show_profile": true, "show_progress": false}
+    
+    # Gamification
+    achievement_badges = Column(String(2000), nullable=True)  # JSON array of earned badges
+    total_points = Column(Integer, default=0)  # Total gamification points
+    level = Column(Integer, default=1)  # User level based on points
+    
     # Engagement tracking
     has_app_installed = Column(Boolean, default=False)  # For smart notification routing
     study_streak = Column(Integer, default=0)  # Consecutive days with activity
