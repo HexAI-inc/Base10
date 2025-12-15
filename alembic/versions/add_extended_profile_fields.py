@@ -17,24 +17,34 @@ depends_on = None
 
 
 def upgrade():
-    # Add extended profile fields
-    op.add_column('users', sa.Column('avatar_url', sa.String(500), nullable=True))
-    op.add_column('users', sa.Column('bio', sa.String(500), nullable=True))
-    op.add_column('users', sa.Column('country', sa.String(100), nullable=True))
-    op.add_column('users', sa.Column('location', sa.String(200), nullable=True))
+    # Get connection to check for existing columns
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [col['name'] for col in inspector.get_columns('users')]
     
-    # Learning preferences
-    op.add_column('users', sa.Column('learning_style', sa.String(50), nullable=True))
-    op.add_column('users', sa.Column('study_time_preference', sa.String(50), nullable=True))
+    # Only add columns if they don't exist
+    columns_to_add = [
+        ('avatar_url', sa.String(500)),
+        ('bio', sa.String(500)),
+        ('country', sa.String(100)),
+        ('location', sa.String(200)),
+        ('learning_style', sa.String(50)),
+        ('study_time_preference', sa.String(50)),
+        ('notification_settings', sa.String(1000)),
+        ('privacy_settings', sa.String(1000)),
+        ('achievement_badges', sa.String(2000)),
+        ('total_points', sa.Integer()),
+        ('level', sa.Integer()),
+    ]
     
-    # Settings (JSON stored as strings)
-    op.add_column('users', sa.Column('notification_settings', sa.String(1000), nullable=True))
-    op.add_column('users', sa.Column('privacy_settings', sa.String(1000), nullable=True))
-    
-    # Gamification
-    op.add_column('users', sa.Column('achievement_badges', sa.String(2000), nullable=True))
-    op.add_column('users', sa.Column('total_points', sa.Integer(), nullable=True, default=0))
-    op.add_column('users', sa.Column('level', sa.Integer(), nullable=True, default=1))
+    for col_name, col_type in columns_to_add:
+        if col_name not in existing_columns:
+            if col_name == 'total_points':
+                op.add_column('users', sa.Column(col_name, col_type, nullable=True, default=0))
+            elif col_name == 'level':
+                op.add_column('users', sa.Column(col_name, col_type, nullable=True, default=1))
+            else:
+                op.add_column('users', sa.Column(col_name, col_type, nullable=True))
 
 
 def downgrade():
