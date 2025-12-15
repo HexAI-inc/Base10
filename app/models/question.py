@@ -21,6 +21,9 @@ class Subject(str, enum.Enum):
     BIOLOGY = "Biology"
     ECONOMICS = "Economics"
     GEOGRAPHY = "Geography"
+    GOVERNMENT = "Government"
+    CIVIC_EDUCATION = "Civic Education"
+    FINANCIAL_ACCOUNTING = "Financial Accounting"
 
 
 class Question(Base):
