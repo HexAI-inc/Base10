@@ -62,9 +62,10 @@ class Settings(BaseSettings):
     # Google AI
     GOOGLE_API_KEY: str = ""
     
-    # Email (Phase 2)
-    SENDGRID_API_KEY: str = ""
-    SENDGRID_FROM_EMAIL: str = ""
+    # Email Service (Resend)
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "Base10 <noreply@base10.app>"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Push Notifications (Phase 2)
     FIREBASE_CREDENTIALS_PATH: str = ""

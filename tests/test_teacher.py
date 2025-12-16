@@ -382,7 +382,7 @@ async def test_analytics_with_psychometric_data(
         topic="Algebra",
         content="Solve x + 5 = 10",
         options_json='["5", "10", "15", "20"]',
-        correct_option=0,
+       correct_index=0,
         difficulty=DifficultyLevel.EASY,
         explanation="x = 10 - 5 = 5"
     )
@@ -391,7 +391,7 @@ async def test_analytics_with_psychometric_data(
         topic="Geometry",
         content="Area of circle with radius 5",
         options_json='["25π", "10π", "5π", "50π"]',
-        correct_option=0,
+       correct_index=0,
         difficulty=DifficultyLevel.MEDIUM,
         explanation="A = πr² = π(5)² = 25π"
     )

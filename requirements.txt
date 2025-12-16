@@ -22,6 +22,9 @@ email-validator==2.1.0
 # SMS Integration (for Phase 3)
 twilio==8.11.0
 
+# Email Service
+resend==0.8.0
+
 # Redis (for SMS session state)
 redis==5.0.1
 

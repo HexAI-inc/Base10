@@ -130,7 +130,9 @@ class CommunicationService:
         )
         
         if should_send_email:
-            results["email"] = self._send_email(user_email, title, body)
+            # Check if message contains HTML formatting
+            html_content = body if "<html>" in body or "<div" in body else None
+            results["email"] = self._send_email(user_email, title, body, html=html_content)
             logger.info(f"📧 Email sent to {user_email}")
         
         return results
@@ -200,34 +202,44 @@ class CommunicationService:
             return False
     
     
-    def _send_email(self, email: str, subject: str, body: str) -> bool:
+    def _send_email(self, email: str, subject: str, body: str, html: str = None) -> bool:
         """
-        Send email via SendGrid/Amazon SES.
+        Send email via Resend.
         
         Used for:
         - Password resets (legal requirement)
         - Monthly progress reports (PDF attachment)
         - Critical alerts (backup channel)
+        - Welcome & onboarding emails
+        - Weekly progress reports
         """
         try:
-            # TODO Phase 2: Integrate SendGrid
-            # from sendgrid import SendGridAPIClient
-            # from sendgrid.helpers.mail import Mail
-            # 
-            # message = Mail(
-            #     from_email='noreply@base10.edu',
-            #     to_emails=email,
-            #     subject=subject,
-            #     html_content=body
-            # )
-            # sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-            # sg.send(message)
+            import resend
+            from app.core.config import settings
             
-            logger.info(f"📧 Email queued to {email}: {subject}")
+            # Initialize Resend with API key
+            resend.api_key = settings.RESEND_API_KEY
+            
+            # Send email
+            params = {
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": [email],
+                "subject": subject,
+            }
+            
+            # Use HTML if provided, otherwise plain text
+            if html:
+                params["html"] = html
+            else:
+                params["text"] = body
+            
+            response = resend.Emails.send(params)
+            
+            logger.info(f"📧 Email sent successfully to {email}: {subject} (ID: {response.get('id', 'unknown')})")
             return True
         
         except Exception as e:
-            logger.error(f"❌ Email failed: {e}")
+            logger.error(f"❌ Email failed to {email}: {e}")
             return False
 
 

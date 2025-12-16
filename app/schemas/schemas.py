@@ -11,7 +11,9 @@ class UserBase(BaseModel):
     """Base user schema."""
     phone_number: Optional[str] = None
     email: Optional[EmailStr] = None
+    username: Optional[str] = None
     full_name: Optional[str] = None
+    role: Optional[str] = "student"  # "student", "teacher", "parent"
     
     @validator('phone_number')
     def validate_phone(cls, v):
@@ -44,6 +46,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_verified: bool
+    role: str
     created_at: datetime
     
     class Config:

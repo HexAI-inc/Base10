@@ -21,13 +21,22 @@ class User(Base):
     # Multiple auth methods for low-connectivity environments
     phone_number = Column(String, unique=True, index=True, nullable=True)  # +2207777777 format
     email = Column(String, unique=True, index=True, nullable=True)
+    username = Column(String(100), unique=True, index=True, nullable=True)  # Alternative login
     
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     
     # Account status
     is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)  # For SMS verification
+    is_verified = Column(Boolean, default=False)  # For email/SMS verification
+    verified_at = Column(DateTime(timezone=True), nullable=True)  # When verified
+    
+    # Email verification
+    verification_token = Column(String(255), nullable=True)  # Secure token for email verification
+    verification_token_expires = Column(DateTime(timezone=True), nullable=True)  # Token expiration (24 hours)
+    
+    # User role for onboarding flows
+    role = Column(String(50), nullable=True, default="student")  # "student", "teacher", "parent"
     
     # User profile & preferences (NEW: for content filtering)
     education_level = Column(String(50), nullable=True)  # "JSS1", "JSS3", "WASSCE", "GABECE"

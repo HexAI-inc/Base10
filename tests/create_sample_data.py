@@ -56,7 +56,7 @@ def create_sample_data():
                 topic="Algebra",
                 content="Solve for x: 2x + 5 = 15",
                 options_json='["x = 5", "x = 10", "x = 7.5", "x = 20"]',
-                correct_option=0,
+               correct_index=0,
                 difficulty=DifficultyLevel.EASY,
                 explanation="2x = 15 - 5 = 10, so x = 5"
             ),
@@ -65,7 +65,7 @@ def create_sample_data():
                 topic="Algebra",
                 content="Factor: x² - 9",
                 options_json='["(x-3)(x+3)", "(x-9)(x+1)", "x(x-9)", "(x-3)²"]',
-                correct_option=0,
+               correct_index=0,
                 difficulty=DifficultyLevel.MEDIUM,
                 explanation="Difference of squares: a² - b² = (a-b)(a+b)"
             ),
@@ -74,7 +74,7 @@ def create_sample_data():
                 topic="Geometry",
                 content="Area of a circle with radius 7",
                 options_json='["49π", "14π", "7π", "98π"]',
-                correct_option=0,
+               correct_index=0,
                 difficulty=DifficultyLevel.EASY,
                 explanation="A = πr² = π(7)² = 49π"
             ),
@@ -83,7 +83,7 @@ def create_sample_data():
                 topic="Geometry",
                 content="Pythagorean theorem: a² + b² = ?",
                 options_json='["c²", "2c", "c", "ab"]',
-                correct_option=0,
+               correct_index=0,
                 difficulty=DifficultyLevel.EASY,
                 explanation="In a right triangle, a² + b² = c²"
             ),
@@ -92,7 +92,7 @@ def create_sample_data():
                 topic="Trigonometry",
                 content="sin²θ + cos²θ = ?",
                 options_json='["1", "0", "2", "θ"]',
-                correct_option=0,
+               correct_index=0,
                 difficulty=DifficultyLevel.MEDIUM,
                 explanation="Fundamental trigonometric identity"
             ),
