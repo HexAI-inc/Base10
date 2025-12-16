@@ -16,17 +16,21 @@ depends_on = None
 
 
 def upgrade():
-    # Add columns to classrooms
-    with op.batch_alter_table('classrooms') as batch_op:
-        batch_op.add_column(sa.Column('subject', sa.String(length=50), nullable=True))
-        batch_op.add_column(sa.Column('grade_level', sa.String(length=20), nullable=True))
+    # Add columns to classrooms (only if the table already exists)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if 'classrooms' in inspector.get_table_names():
+        with op.batch_alter_table('classrooms') as batch_op:
+            batch_op.add_column(sa.Column('subject', sa.String(length=50), nullable=True))
+            batch_op.add_column(sa.Column('grade_level', sa.String(length=20), nullable=True))
 
-    # Add columns to assignments
-    with op.batch_alter_table('assignments') as batch_op:
-        batch_op.add_column(sa.Column('assignment_type', sa.String(length=20), nullable=False, server_default='quiz'))
-        batch_op.add_column(sa.Column('max_points', sa.Integer(), nullable=False, server_default='100'))
-        batch_op.add_column(sa.Column('is_ai_generated', sa.Integer(), nullable=False, server_default='0'))
-        batch_op.add_column(sa.Column('status', sa.String(length=20), nullable=False, server_default='draft'))
+    # Add columns to assignments (only if the table already exists)
+    if 'assignments' in inspector.get_table_names():
+        with op.batch_alter_table('assignments') as batch_op:
+            batch_op.add_column(sa.Column('assignment_type', sa.String(length=20), nullable=False, server_default='quiz'))
+            batch_op.add_column(sa.Column('max_points', sa.Integer(), nullable=False, server_default='100'))
+            batch_op.add_column(sa.Column('is_ai_generated', sa.Integer(), nullable=False, server_default='0'))
+            batch_op.add_column(sa.Column('status', sa.String(length=20), nullable=False, server_default='draft'))
 
     # Create classroom_posts
     op.create_table(
