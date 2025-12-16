@@ -2,7 +2,7 @@
 User Onboarding Service
 Handles welcome emails, verification flows, and role-based onboarding sequences
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
@@ -111,7 +111,8 @@ class OnboardingService:
                 return None
             
             # Check token expiration (24 hours)
-            if user.verification_token_expires and user.verification_token_expires < datetime.utcnow():
+            now = datetime.now(timezone.utc)
+            if user.verification_token_expires and user.verification_token_expires < now:
                 logger.warning(f"Expired verification token for user {user.email}")
                 return None
             
@@ -119,7 +120,7 @@ class OnboardingService:
             user.is_verified = True
             user.verification_token = None
             user.verification_token_expires = None
-            user.verified_at = datetime.utcnow()
+            user.verified_at = now
             
             self.db.commit()
             self.db.refresh(user)
@@ -269,7 +270,7 @@ Let's support their learning journey! 📚
         
         # Store in database with expiration
         user.verification_token = token
-        user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
         
         self.db.commit()
         
