@@ -186,7 +186,7 @@ class SyncPullResponse(BaseModel):
     accuracy: float
     synced_at: datetime
     # New grades that were published since last sync (student-facing notifications)
-    new_grades: Optional[List[Dict]] = None
+    new_grades: Optional[List[dict]] = None
 
 
 # ============= Statistics Schemas =============
