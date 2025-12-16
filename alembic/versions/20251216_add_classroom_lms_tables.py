@@ -42,7 +42,7 @@ def upgrade():
         sa.Column('post_type', sa.String(length=30), nullable=True),
         sa.Column('parent_post_id', sa.Integer(), sa.ForeignKey('classroom_posts.id'), nullable=True),
         sa.Column('attachment_url', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()')),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP')),
     )
 
     # Create classroom_materials
@@ -55,7 +55,7 @@ def upgrade():
         sa.Column('title', sa.String(length=200), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('url', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()')),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP')),
     )
 
     # Create submissions
@@ -71,7 +71,7 @@ def upgrade():
         sa.Column('grade', sa.Integer(), nullable=True),
         sa.Column('feedback', sa.Text(), nullable=True),
         sa.Column('status', sa.String(length=20), nullable=True),
-        sa.Column('submitted_at', sa.DateTime(timezone=True), server_default=sa.text('now()')),
+        sa.Column('submitted_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('graded_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('is_graded', sa.Integer(), nullable=False, server_default='0'),
     )
