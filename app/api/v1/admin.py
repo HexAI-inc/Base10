@@ -193,7 +193,7 @@ async def get_system_health(
     
     # Calculate average accuracy
     accuracy_query = db.query(
-        func.avg(case((Attempt.is_correct, 100), else_=0))
+        func.avg(case((Attempt.is_correct == True, 100), else_=0))
     ).scalar()
     average_accuracy = round(accuracy_query or 0, 2)
     
@@ -377,30 +377,32 @@ async def get_content_quality(
         difficulty_breakdown[difficulty.value] = count
     
     # Flagged questions (>3 reports)
-    flagged = db.query(func.count(func.distinct(QuestionReport.question_id))).filter(
+    flagged_subquery = db.query(
+        QuestionReport.question_id
+    ).filter(
         QuestionReport.status == "pending"
     ).group_by(QuestionReport.question_id).having(
         func.count(QuestionReport.id) > 3
-    ).scalar() or 0
+    ).subquery()
+    
+    flagged = db.query(func.count(flagged_subquery.c.question_id)).scalar() or 0
     
     # Low quality questions (<40% accuracy)
     low_quality_subquery = db.query(
-        Attempt.question_id,
-        func.avg(case((Attempt.is_correct, 1), else_=0)).label('accuracy')
+        Attempt.question_id
     ).group_by(Attempt.question_id).having(
-        func.avg(case((Attempt.is_correct, 1), else_=0)) < 0.4
+        func.avg(case((Attempt.is_correct == True, 1), else_=0)) < 0.4
     ).subquery()
     
     low_quality = db.query(func.count(low_quality_subquery.c.question_id)).scalar() or 0
     
     # High quality questions (60-80% accuracy - ideal range)
     high_quality_subquery = db.query(
-        Attempt.question_id,
-        func.avg(case((Attempt.is_correct, 1), else_=0)).label('accuracy')
+        Attempt.question_id
     ).group_by(Attempt.question_id).having(
         and_(
-            func.avg(case((Attempt.is_correct, 1), else_=0)) >= 0.6,
-            func.avg(case((Attempt.is_correct, 1), else_=0)) <= 0.8
+            func.avg(case((Attempt.is_correct == True, 1), else_=0)) >= 0.6,
+            func.avg(case((Attempt.is_correct == True, 1), else_=0)) <= 0.8
         )
     ).subquery()
     
@@ -513,7 +515,7 @@ async def get_top_users(
         User.level,
         User.last_activity_date,
         func.count(Attempt.id).label('total_attempts'),
-        func.avg(case((Attempt.is_correct, 100), else_=0)).label('accuracy')
+        func.avg(case((Attempt.is_correct == True, 100), else_=0)).label('accuracy')
     ).join(
         Attempt, User.id == Attempt.user_id
     ).group_by(
@@ -560,7 +562,7 @@ async def get_problematic_questions(
         Question.topic,
         Question.difficulty,
         func.count(Attempt.id).label('total_attempts'),
-        func.avg(case((Attempt.is_correct, 1), else_=0)).label('accuracy')
+        func.avg(case((Attempt.is_correct == True, 1), else_=0)).label('accuracy')
     ).join(
         Attempt, Question.id == Attempt.question_id
     ).group_by(
@@ -568,7 +570,7 @@ async def get_problematic_questions(
     ).having(
         and_(
             func.count(Attempt.id) >= min_attempts,
-            func.avg(case((Attempt.is_correct, 1), else_=0)) <= max_accuracy
+            func.avg(case((Attempt.is_correct == True, 1), else_=0)) <= max_accuracy
         )
     ).order_by(
         'accuracy'
@@ -577,15 +579,16 @@ async def get_problematic_questions(
     problem_questions = []
     for q in low_accuracy_questions:
         # Get report count and reasons
-        reports = db.query(
-            func.count(QuestionReport.id).label('count'),
-            func.array_agg(QuestionReport.reason).label('reasons')
-        ).filter(
+        report_count = db.query(func.count(QuestionReport.id)).filter(
             QuestionReport.question_id == q.id
-        ).group_by(QuestionReport.question_id).first()
+        ).scalar() or 0
         
-        report_count = reports.count if reports else 0
-        reasons = list(set(reports.reasons)) if reports and reports.reasons else []
+        # Get unique reasons
+        report_reasons = db.query(QuestionReport.reason).filter(
+            QuestionReport.question_id == q.id
+        ).distinct().all()
+        
+        reasons = [r[0].value if hasattr(r[0], 'value') else str(r[0]) for r in report_reasons]
         
         problem_questions.append(ProblemQuestion(
             question_id=q.id,
@@ -595,7 +598,7 @@ async def get_problematic_questions(
             accuracy_rate=round(q.accuracy * 100, 2),
             total_attempts=q.total_attempts,
             report_count=report_count,
-            reasons=[r.value if hasattr(r, 'value') else str(r) for r in reasons]
+            reasons=reasons
         ))
     
     return problem_questions
@@ -646,7 +649,7 @@ async def get_stats_summary(
     
     # Engagement
     avg_accuracy = db.query(
-        func.avg(case((Attempt.is_correct, 100), else_=0))
+        func.avg(case((Attempt.is_correct == True, 100), else_=0))
     ).filter(Attempt.attempted_at >= start_date).scalar() or 0
     
     # Report stats
