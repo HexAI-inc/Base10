@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import engine
 from app.db.base import Base
-from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system, teacher, ai, assets, billing, student
+from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system, teacher, ai, assets, billing, student, admin
 
 
 @asynccontextmanager
@@ -89,6 +89,9 @@ app.include_router(teacher.router, prefix="/api/v1/teacher", tags=["Teacher"])
 
 # Student Dashboard & Analytics
 app.include_router(student.router, prefix="/api/v1/student", tags=["Student Dashboard"])
+
+# Admin Dashboard & Monitoring
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
 # System & Config
 app.include_router(system.router, prefix="/api/v1/system", tags=["System"])
