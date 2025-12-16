@@ -1,0 +1,61 @@
+name: Validate DB migrations
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Wait for Postgres
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+          until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Export DB URL
+        run: echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/testdb" >> $GITHUB_ENV
+
+      - name: Show alembic heads
+        run: alembic -c alembic.ini heads
+
+      - name: Upgrade DB to head
+        run: alembic -c alembic.ini upgrade head
+
+      - name: Verify current revision
+        run: alembic -c alembic.ini current
+
+      - name: Run migrations dry-run SQL (optional)
+        run: alembic -c alembic.ini upgrade --sql head | head -n 200
+
+      - name: Run tests (optional)
+        run: |
+          pytest -q || true

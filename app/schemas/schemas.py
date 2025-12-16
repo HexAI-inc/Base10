@@ -1,6 +1,6 @@
 """Pydantic schemas for data validation and serialization."""
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 from enum import Enum
 
