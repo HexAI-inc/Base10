@@ -20,10 +20,31 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add psychometric tracking fields to attempts table
-    op.add_column('attempts', sa.Column('time_taken_ms', sa.Integer(), nullable=True))
-    op.add_column('attempts', sa.Column('confidence_level', sa.Integer(), nullable=True))
-    op.add_column('attempts', sa.Column('network_type', sa.String(length=20), nullable=True))
-    op.add_column('attempts', sa.Column('app_version', sa.String(length=20), nullable=True))
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+
+    # If the attempts table doesn't exist (fresh DB), create a minimal attempts table
+    if 'attempts' not in inspector.get_table_names():
+        op.create_table('attempts',
+            sa.Column('id', sa.Integer(), primary_key=True),
+            sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False),
+            sa.Column('question_id', sa.Integer(), sa.ForeignKey('questions.id'), nullable=False),
+            sa.Column('is_correct', sa.Boolean(), nullable=False, server_default=sa.text('false')),
+            sa.Column('selected_option', sa.Integer(), nullable=True),
+            sa.Column('attempted_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'))
+        )
+
+    # Ensure columns exist before adding
+    existing_cols = inspector.get_columns('attempts') if 'attempts' in inspector.get_table_names() else []
+    col_names = [c['name'] for c in existing_cols]
+    if 'time_taken_ms' not in col_names:
+        op.add_column('attempts', sa.Column('time_taken_ms', sa.Integer(), nullable=True))
+    if 'confidence_level' not in col_names:
+        op.add_column('attempts', sa.Column('confidence_level', sa.Integer(), nullable=True))
+    if 'network_type' not in col_names:
+        op.add_column('attempts', sa.Column('network_type', sa.String(length=20), nullable=True))
+    if 'app_version' not in col_names:
+        op.add_column('attempts', sa.Column('app_version', sa.String(length=20), nullable=True))
     
     # Create classroom tables
     op.create_table('classrooms',
