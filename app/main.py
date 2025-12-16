@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import engine
 from app.db.base import Base
-from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system, teacher, ai, assets, billing, student, admin
+from app.api.v1 import auth, questions, sync, leaderboard, recovery, profile, reports, flashcards, system, teacher, ai, assets, billing, student, admin, classrooms, ai_teacher
 
 
 @asynccontextmanager
@@ -75,6 +75,7 @@ app.include_router(flashcards.router, prefix="/api/v1/flashcards", tags=["Flashc
 
 # AI & Intelligence (NEW - Strategic Addition #1)
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI Tutor"])
+app.include_router(ai_teacher.router, prefix="/api/v1/ai", tags=["AI Teacher"])
 
 # Assets & Optimization (NEW - Strategic Addition #2)
 app.include_router(assets.router, prefix="/api/v1/assets", tags=["Assets"])
@@ -86,6 +87,7 @@ app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Offline Sync"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["Leaderboard"])
 app.include_router(teacher.router, prefix="/api/v1/teacher", tags=["Teacher"])
+app.include_router(classrooms.router, prefix="/api/v1", tags=["Classrooms"])
 
 # Student Dashboard & Analytics
 app.include_router(student.router, prefix="/api/v1/student", tags=["Student Dashboard"])

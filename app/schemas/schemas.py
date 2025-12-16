@@ -185,6 +185,8 @@ class SyncPullResponse(BaseModel):
     total_attempts: int
     accuracy: float
     synced_at: datetime
+    # New grades that were published since last sync (student-facing notifications)
+    new_grades: Optional[List[Dict]] = None
 
 
 # ============= Statistics Schemas =============

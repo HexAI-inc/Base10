@@ -198,13 +198,45 @@ def sync_pull_questions(
     
     # Calculate overall stats
     stats = _calculate_user_stats(db, current_user.id)
-    
+
+    # Include any newly graded submissions since last sync (for notifications)
+    new_grades = []
+    try:
+        from app.models.classroom import Submission
+        if pull_request.last_sync_timestamp:
+            graded_subs = db.query(Submission).filter(
+                Submission.student_id == current_user.id,
+                Submission.is_graded == 1,
+                Submission.graded_at > pull_request.last_sync_timestamp
+            ).all()
+        else:
+            # For full sync, only include recent grades (last 7 days)
+            from datetime import timedelta
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            graded_subs = db.query(Submission).filter(
+                Submission.student_id == current_user.id,
+                Submission.is_graded == 1,
+                Submission.graded_at >= cutoff
+            ).all()
+
+        for s in graded_subs:
+            new_grades.append({
+                'submission_id': s.id,
+                'assignment_id': s.assignment_id,
+                'grade': s.grade,
+                'feedback': s.feedback,
+                'graded_at': s.graded_at
+            })
+    except Exception:
+        new_grades = []
+
     return SyncPullResponse(
         questions=[QuestionResponse.from_orm(q) for q in questions],
         weak_topics=weak_topics,
         total_attempts=stats['total_attempts'],
         accuracy=stats['accuracy'],
-        synced_at=datetime.utcnow()
+        synced_at=datetime.utcnow(),
+        new_grades=new_grades
     )
 
 
