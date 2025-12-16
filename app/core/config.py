@@ -19,14 +19,18 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days (offline-first needs longer tokens)
     
     # CORS - Allow web app and mobile app
-    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000"]'
+    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app"]'
     
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Parse CORS origins from JSON string or return default."""
         try:
             if isinstance(self.BACKEND_CORS_ORIGINS, str):
-                return json.loads(self.BACKEND_CORS_ORIGINS)
+                origins = json.loads(self.BACKEND_CORS_ORIGINS)
+                # Always allow localhost for development
+                if "http://localhost:3000" not in origins:
+                    origins.append("http://localhost:3000")
+                return origins
             return self.BACKEND_CORS_ORIGINS
         except:
             return ["http://localhost:3000", "http://localhost:5000", "*"]
