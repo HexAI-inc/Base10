@@ -360,21 +360,25 @@ async def get_content_quality(
     # Total questions
     total_questions = db.query(func.count(Question.id)).scalar() or 0
     
-    # Questions by subject
+    # Questions by subject - use raw query to avoid enum mismatch
     subject_breakdown = {}
-    for subject in Subject:
-        count = db.query(func.count(Question.id)).filter(
-            Question.subject == subject
-        ).scalar() or 0
-        subject_breakdown[subject.value] = count
+    subject_counts = db.query(
+        Question.subject,
+        func.count(Question.id).label('count')
+    ).group_by(Question.subject).all()
+    
+    for subject, count in subject_counts:
+        subject_breakdown[subject.value if hasattr(subject, 'value') else str(subject)] = count
     
     # Questions by difficulty
     difficulty_breakdown = {}
-    for difficulty in DifficultyLevel:
-        count = db.query(func.count(Question.id)).filter(
-            Question.difficulty == difficulty
-        ).scalar() or 0
-        difficulty_breakdown[difficulty.value] = count
+    difficulty_counts = db.query(
+        Question.difficulty,
+        func.count(Question.id).label('count')
+    ).group_by(Question.difficulty).all()
+    
+    for difficulty, count in difficulty_counts:
+        difficulty_breakdown[difficulty.value if hasattr(difficulty, 'value') else str(difficulty)] = count
     
     # Flagged questions (>3 reports)
     flagged_subquery = db.query(
