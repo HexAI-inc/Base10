@@ -1403,4 +1403,19 @@ Student Profile:"""
         accuracy = correct_attempts / total_attempts * 100
         ai_context += f"\n\nPerformance Metrics:\nTotal Quiz Attempts: {total_attempts}\nAccuracy: {accuracy:.1f}%"
     
-    ai_context += f"\n\nTeacher's Question: {payload.question}\n\nProvide actionable, pedagogical advice:"\n    \n    try:\n        response = ai_service.model.generate_content(ai_context)\n        \n        logger.info(f\"🤖 AI provided student-specific advice for student {student_id} to teacher {user.id}\")\n        \n        return {\n            \"answer\": response.text,\n            \"student_name\": student.full_name or student.username,\n            \"classroom_name\": classroom.name,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    except Exception as e:\n        logger.error(f\"❌ AI error: {e}\")\n        raise HTTPException(status_code=500, detail=\"Failed to generate response\")
+    ai_context += f"\n\nTeacher's Question: {payload.question}\n\nProvide actionable, pedagogical advice:"
+    
+    try:
+        response = ai_service.model.generate_content(ai_context)
+        
+        logger.info(f"🤖 AI provided student-specific advice for student {student_id} to teacher {user.id}")
+        
+        return {
+            "answer": response.text,
+            "student_name": student.full_name or student.username,
+            "classroom_name": classroom.name,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"❌ AI error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate response")
