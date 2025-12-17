@@ -567,12 +567,70 @@ async def get_classroom_assignments(classroom_id: int, db: Session = Depends(get
 
 @router.get("/classrooms/{classroom_id}/members")
 async def get_members(classroom_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Get all members (teacher + students) in a classroom with detailed info."""
     classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     if not classroom:
         raise HTTPException(status_code=404, detail="Classroom not found")
+    
+    # Check permissions: teacher or enrolled student can view members
+    is_teacher = classroom.teacher_id == user.id
+    is_student = user in classroom.students
+    
+    if not (is_teacher or is_student):
+        raise HTTPException(status_code=403, detail="Not authorized to view classroom members")
+    
+    # Get teacher info
     teacher = db.query(User).filter(User.id == classroom.teacher_id).first()
-    students = classroom.students
-    return {"teacher": teacher, "students": students}
+    teacher_data = {
+        "id": teacher.id,
+        "full_name": teacher.full_name,
+        "username": teacher.username,
+        "email": teacher.email if is_teacher else None,  # Only teacher sees other's emails
+        "role": "teacher",
+        "avatar_url": teacher.avatar_url
+    } if teacher else None
+    
+    # Get students with join dates and activity
+    students_data = []
+    for student in classroom.students:
+        # Get join date from association table
+        join_record = db.query(classroom_students).filter(
+            classroom_students.c.classroom_id == classroom_id,
+            classroom_students.c.student_id == student.id
+        ).first()
+        
+        # Get student's submission count (activity indicator)
+        from app.models.classroom import Submission
+        submission_count = db.query(func.count(Submission.id)).join(
+            Assignment,
+            Submission.assignment_id == Assignment.id
+        ).filter(
+            Assignment.classroom_id == classroom_id,
+            Submission.student_id == student.id
+        ).scalar() or 0
+        
+        students_data.append({
+            "id": student.id,
+            "full_name": student.full_name or student.username,
+            "username": student.username,
+            "email": student.email if is_teacher else None,  # Only teacher sees emails
+            "role": "student",
+            "avatar_url": student.avatar_url,
+            "joined_at": join_record.joined_at.isoformat() if join_record else None,
+            "submission_count": submission_count,
+            "is_active": student.is_active
+        })
+    
+    # Sort students by name
+    students_data.sort(key=lambda x: x["full_name"].lower())
+    
+    return {
+        "classroom_id": classroom_id,
+        "classroom_name": classroom.name,
+        "teacher": teacher_data,
+        "students": students_data,
+        "total_students": len(students_data)
+    }
 
 
 @router.delete("/classrooms/{classroom_id}/members/{user_id}")
