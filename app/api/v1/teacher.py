@@ -118,19 +118,6 @@ class ClassroomAnalytics(BaseModel):
 
 # ============= Endpoints =============
 
-
-    
-    # Add student to classroom
-    classroom.students.append(current_user)
-    db.commit()
-    
-    return {
-        "message": "Successfully joined classroom",
-        "classroom_name": classroom.name,
-        "teacher": classroom.teacher.full_name
-    }
-
-
 @router.post("/assignments", response_model=AssignmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_assignment(
     assignment_data: AssignmentCreate,
