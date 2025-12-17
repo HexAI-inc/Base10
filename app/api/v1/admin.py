@@ -6,7 +6,7 @@ content quality, and system performance. Protected by admin role.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, case, desc, Integer
+from sqlalchemy import func, and_, or_, case, desc, Integer, text
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
@@ -199,16 +199,19 @@ async def get_system_health(
     
     # Check database connection
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_connected = True
     except:
         db_connected = False
     
     # Check Redis connection (optional)
-    redis_connected = True
+    redis_connected = False
     try:
-        from app.core.redis_client import redis_client
-        redis_client.ping()
+        from app.core.redis_client import RedisClient
+        redis_client = RedisClient()
+        if redis_client.client:
+            redis_client.client.ping()
+            redis_connected = True
     except:
         redis_connected = False
     
