@@ -1365,7 +1365,30 @@ async def ask_ai_with_student_context(
     ).first()
     
     # Build comprehensive AI context
-    ai_context = f\"\"\"\nYou are an educational consultant helping a teacher understand and support their student.\n\nClassroom: {classroom.name}\nSubject: {classroom.subject or 'General'}\nGrade Level: {classroom.grade_level or 'Not specified'}\n\nStudent Profile:\"\"\"\n    \n    if profile:\n        if profile.learning_style:\n            ai_context += f\"\\nLearning Style: {profile.learning_style}\"\n        if profile.strengths:\n            ai_context += f\"\\nStrengths: {profile.strengths}\"\n        if profile.weaknesses:\n            ai_context += f\"\\nWeaknesses: {profile.weaknesses}\"\n        if profile.participation_level:\n            ai_context += f\"\\nParticipation: {profile.participation_level}\"\n        if profile.notes:\n            ai_context += f\"\\nTeacher Notes: {profile.notes}\"\n        if profile.ai_context:\n            ai_context += f\"\\n\\nAdditional Context: {profile.ai_context}\"\n    \n    # Add performance data
+    ai_context = f"""
+You are an educational consultant helping a teacher understand and support their student.
+
+Classroom: {classroom.name}
+Subject: {classroom.subject or 'General'}
+Grade Level: {classroom.grade_level or 'Not specified'}
+
+Student Profile:"""
+    
+    if profile:
+        if profile.learning_style:
+            ai_context += f"\nLearning Style: {profile.learning_style}"
+        if profile.strengths:
+            ai_context += f"\nStrengths: {profile.strengths}"
+        if profile.weaknesses:
+            ai_context += f"\nWeaknesses: {profile.weaknesses}"
+        if profile.participation_level:
+            ai_context += f"\nParticipation: {profile.participation_level}"
+        if profile.notes:
+            ai_context += f"\nTeacher Notes: {profile.notes}"
+        if profile.ai_context:
+            ai_context += f"\n\nAdditional Context: {profile.ai_context}"
+    
+    # Add performance data
     from app.models.question import Question
     total_attempts = db.query(func.count(Attempt.id)).filter(
         Attempt.user_id == student_id
@@ -1378,4 +1401,6 @@ async def ask_ai_with_student_context(
     
     if total_attempts > 0:
         accuracy = correct_attempts / total_attempts * 100
-        ai_context += f\"\\n\\nPerformance Metrics:\\nTotal Quiz Attempts: {total_attempts}\\nAccuracy: {accuracy:.1f}%\"\n    \n    ai_context += f\"\\n\\nTeacher's Question: {payload.question}\\n\\nProvide actionable, pedagogical advice:\"\n    \n    try:\n        response = ai_service.model.generate_content(ai_context)\n        \n        logger.info(f\"🤖 AI provided student-specific advice for student {student_id} to teacher {user.id}\")\n        \n        return {\n            \"answer\": response.text,\n            \"student_name\": student.full_name or student.username,\n            \"classroom_name\": classroom.name,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    except Exception as e:\n        logger.error(f\"❌ AI error: {e}\")\n        raise HTTPException(status_code=500, detail=\"Failed to generate response\")
+        ai_context += f"\n\nPerformance Metrics:\nTotal Quiz Attempts: {total_attempts}\nAccuracy: {accuracy:.1f}%"
+    
+    ai_context += f"\n\nTeacher's Question: {payload.question}\n\nProvide actionable, pedagogical advice:"\n    \n    try:\n        response = ai_service.model.generate_content(ai_context)\n        \n        logger.info(f\"🤖 AI provided student-specific advice for student {student_id} to teacher {user.id}\")\n        \n        return {\n            \"answer\": response.text,\n            \"student_name\": student.full_name or student.username,\n            \"classroom_name\": classroom.name,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    except Exception as e:\n        logger.error(f\"❌ AI error: {e}\")\n        raise HTTPException(status_code=500, detail=\"Failed to generate response\")
