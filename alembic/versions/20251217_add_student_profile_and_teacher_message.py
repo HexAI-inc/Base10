@@ -1,7 +1,7 @@
 """add student profile and teacher message tables
 
 Revision ID: 20251217_studentprofile
-Revises: 7db8b1ebb741
+Revises: 2bf57f65397a
 Create Date: 2025-12-17
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20251217_studentprofile'
-down_revision = '7db8b1ebb741'
+down_revision = '2bf57f65397a'
 branch_labels = None
 depends_on = None
 
