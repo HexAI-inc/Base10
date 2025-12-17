@@ -125,6 +125,43 @@ async def list_classrooms(db: Session = Depends(get_db), user: User = Depends(ge
     ]
 
 
+@router.get("/classrooms/{classroom_id}")
+async def get_classroom(classroom_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Get classroom details by ID. Teachers see their own classrooms, students see classrooms they're enrolled in."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    
+    # Check permissions: teacher who owns it OR student enrolled in it
+    is_teacher = classroom.teacher_id == user.id
+    is_student = user in classroom.students
+    
+    if not (is_teacher or is_student):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get student count
+    student_count = db.query(func.count(classroom_students.c.student_id)).filter(
+        classroom_students.c.classroom_id == classroom_id
+    ).scalar() or 0
+    
+    return {
+        "id": classroom.id,
+        "name": classroom.name,
+        "description": classroom.description,
+        "subject": classroom.subject,
+        "grade_level": classroom.grade_level,
+        "join_code": classroom.join_code if is_teacher else None,  # Only teachers see join code
+        "teacher_id": classroom.teacher_id,
+        "teacher_name": classroom.teacher.full_name if classroom.teacher else None,
+        "is_active": classroom.is_active,
+        "student_count": student_count,
+        "created_at": classroom.created_at.isoformat(),
+        "is_teacher": is_teacher,
+        "is_student": is_student
+    }
+
+
 @router.post("/classrooms/join")
 async def join_classroom(join_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     classroom = db.query(Classroom).filter(

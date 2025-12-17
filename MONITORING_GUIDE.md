@@ -1,5 +1,18 @@
 # Deployment Monitoring Scripts
 
+## Available Scripts
+
+### 🔨 `watch-deployment.sh` - Build & Deploy Monitor
+Monitors Docker builds, migrations, and deployment progress. Use this when you push new code.
+
+### 📝 `watch-logs.sh` - Live Application Logs
+Streams real-time application logs with color coding. Use this to monitor your running app.
+
+### 📊 `monitor-deployment.sh` - Combined Monitor (Legacy)
+Shows both build and runtime logs. Use the specific scripts above for better clarity.
+
+---
+
 ## Quick Start
 
 ### 1. Install Digital Ocean CLI (`doctl`)
@@ -22,36 +35,62 @@ doctl auth init
 # Get token from: https://cloud.digitalocean.com/account/api/tokens
 ```
 
-### 3. Run the Monitor
+### 3. Choose Your Monitor
 
+**Watch a deployment build:**
 ```bash
-./monitor-deployment.sh
+./watch-deployment.sh
 ```
 
-## What the Monitor Shows
+**Watch live application logs:**
+```bash
+./watch-logs.sh
+```
+
+## What Each Monitor Shows
+
+### 🔨 Deployment Monitor (`watch-deployment.sh`)
 
 ```
 ════════════════════════════════════════════════════════════════
-  Digital Ocean Deployment Monitor - 2025-12-17 08:45:00
+  🔨 Deployment Build Monitor - 2025-12-17 08:45:00
 ════════════════════════════════════════════════════════════════
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 Deployment: abc123def456
+📦 Deployment ID: abc123def456
+🕐 Started: 2025-12-17 08:43:00
+
 🔨 Status: BUILDING (3/10 steps)
+   Docker image being created...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 Recent Build Logs:
+📋 Build Logs (last 30 lines):
 ────────────────────────────────────────────────────────────────
 Step 5/12 : RUN pip install --no-cache-dir -r requirements.txt
 Successfully built image
 Running database migrations...
 INFO [alembic.runtime.migration] Running upgrade...
+✅ Build Complete! Application is live.
+```
 
-📝 Recent Runtime Logs:
+### 📝 Runtime Logs Monitor (`watch-logs.sh`)
+
+```
+════════════════════════════════════════════════════════════════
+  📝 Live Runtime Logs - 2025-12-17 08:45:00
+════════════════════════════════════════════════════════════════
+App: base10-backend
+Press Ctrl+C to exit
+════════════════════════════════════════════════════════════════
+
+📡 Streaming live logs...
 ────────────────────────────────────────────────────────────────
-INFO: Starting application...
-✅ Database ready!
-INFO: Uvicorn running on http://0.0.0.0:8000
+
+Dec 17 08:45:01 INFO: Starting application...
+Dec 17 08:45:01 ✅ Database ready!
+Dec 17 08:45:01 INFO: Uvicorn running on http://0.0.0.0:8000
+Dec 17 08:45:15 INFO: 10.244.5.201:50230 - "GET /health HTTP/1.1" 200 OK
+Dec 17 08:45:22 INFO: 10.244.8.64:44710 - "POST /api/v1/classrooms HTTP/1.1" 201 Created
 ```
 
 ## Manual Commands
@@ -103,16 +142,61 @@ doctl apps create-deployment $APP_ID
 doctl apps get-deployment $APP_ID $DEPLOYMENT_ID
 ```
 
-## Monitoring Options
+## Usage Scenarios
 
-### Option 1: Automated Monitor (Recommended)
+### 🚀 After Pushing Code (Watch Deployment)
+```bash
+./watch-deployment.sh
+```
+**Shows:**
+- Build progress (PENDING → BUILDING → DEPLOYING → ACTIVE)
+- Docker image creation steps
+- Database migration output
+- Deployment success/failure status
+- Auto-detects new deployments
+
+**Use when:**
+- You just pushed code to GitHub
+- Monitoring if migrations succeed
+- Checking build errors
+- Waiting for deployment to go live
+
+### 📊 Monitor Running Application (Watch Logs)
+```bash
+./watch-logs.sh
+```
+**Shows:**
+- Live HTTP requests (GET, POST, etc.)
+- Application errors and exceptions
+- Database queries and performance
+- Redis connection status
+- Real-time color-coded output
+
+**Use when:**
+- Debugging production issues
+- Watching API requests
+- Monitoring performance
+- Checking error rates
+
+### 📋 Combined View (Legacy)
 ```bash
 ./monitor-deployment.sh
 ```
+- Shows both build and runtime logs
 - Auto-refreshes every 5 seconds
-- Shows build progress
-- Displays recent logs
-- Colored output for easy reading
+- Good for quick overview
+
+## Monitoring Options
+
+### Option 1: Separate Monitors (Recommended)
+**Two terminal windows:**
+```bash
+# Terminal 1: Watch deployments
+./watch-deployment.sh
+
+# Terminal 2: Watch live logs
+./watch-logs.sh
+```
 
 ### Option 2: Follow Logs Manually
 ```bash
