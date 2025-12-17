@@ -2,7 +2,7 @@
 AI endpoints for intelligent tutoring.
 Provides server-side AI explanations and chat using Gemini when online.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, Field
