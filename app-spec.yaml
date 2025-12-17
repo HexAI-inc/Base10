@@ -22,9 +22,10 @@ services:
       - key: REDIS_URL
         scope: RUN_TIME
         type: SECRET
-        # OPTIONAL for MVP - app works without Redis (uses in-memory cache)
-        # Get free Redis from: railway.app or render.com
-        value: "redis://localhost:6379/0"  # Will fallback to in-memory if unavailable
+        # OPTIONAL: App works without Redis (uses in-memory fallback)
+        # For production with many users, add managed Redis for better performance
+        # Free options: Railway.app, Upstash.com | DO Managed: $7-15/month
+        value: "redis://localhost:6379/0"  # Default fallback - will show warning but app continues
       
       - key: SECRET_KEY
         scope: RUN_TIME

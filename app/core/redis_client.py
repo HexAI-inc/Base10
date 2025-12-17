@@ -45,7 +45,12 @@ class RedisClient:
                 self._client.ping()
                 logger.info(f"✅ Redis connected: {settings.REDIS_URL}")
             except redis.ConnectionError as e:
-                logger.error(f"❌ Redis connection failed: {e}")
+                logger.warning(f"⚠️  Redis unavailable: {e}")
+                logger.info("ℹ️  App will use in-memory fallback (caching disabled, slower leaderboards)")
+                self._client = None
+            except Exception as e:
+                logger.warning(f"⚠️  Redis connection issue: {e}")
+                logger.info("ℹ️  App will continue without Redis")
                 self._client = None
     
     @property
