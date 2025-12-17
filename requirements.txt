@@ -41,6 +41,9 @@ cloudinary==1.38.0  # Image optimization
 # Analytics
 posthog==3.3.4  # Product analytics
 
+# AI Services
+google-generativeai==0.3.2  # Gemini AI for quiz generation and grading
+
 # Background Jobs & Scheduling
 apscheduler==3.10.4  # Cron jobs for streaks, reminders, leaderboards
 
