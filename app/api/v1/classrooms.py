@@ -262,6 +262,78 @@ async def list_materials(classroom_id: int, db: Session = Depends(get_db), user:
     return materials
 
 
+@router.get("/classrooms/{classroom_id}/assignments")
+async def get_classroom_assignments(classroom_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Get all assignments for a classroom. Teachers see all, students see published assignments."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    
+    # Check permissions: teacher who owns it OR student enrolled in it
+    is_teacher = classroom.teacher_id == user.id
+    is_student = user in classroom.students
+    
+    if not (is_teacher or is_student):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = db.query(Assignment).filter(Assignment.classroom_id == classroom_id)
+    
+    # Students only see published assignments
+    if not is_teacher:
+        query = query.filter(Assignment.status == "published")
+    
+    assignments = query.order_by(Assignment.created_at.desc()).all()
+    
+    # Get submission counts for teachers
+    result = []
+    for assignment in assignments:
+        assignment_data = {
+            "id": assignment.id,
+            "classroom_id": assignment.classroom_id,
+            "title": assignment.title,
+            "description": assignment.description,
+            "assignment_type": assignment.assignment_type,
+            "max_points": assignment.max_points,
+            "due_date": assignment.due_date.isoformat() if assignment.due_date else None,
+            "is_ai_generated": assignment.is_ai_generated,
+            "status": assignment.status,
+            "created_at": assignment.created_at.isoformat()
+        }
+        
+        # Add submission stats for teachers
+        if is_teacher:
+            from app.models.classroom import Submission
+            total_submissions = db.query(func.count(Submission.id)).filter(
+                Submission.assignment_id == assignment.id
+            ).scalar() or 0
+            
+            graded_submissions = db.query(func.count(Submission.id)).filter(
+                Submission.assignment_id == assignment.id,
+                Submission.is_graded == True
+            ).scalar() or 0
+            
+            assignment_data["submission_count"] = total_submissions
+            assignment_data["graded_count"] = graded_submissions
+        else:
+            # Check if student has submitted
+            from app.models.classroom import Submission
+            student_submission = db.query(Submission).filter(
+                Submission.assignment_id == assignment.id,
+                Submission.student_id == user.id
+            ).first()
+            
+            assignment_data["has_submitted"] = student_submission is not None
+            assignment_data["submission_id"] = student_submission.id if student_submission else None
+            assignment_data["is_graded"] = student_submission.is_graded if student_submission else False
+            assignment_data["final_score"] = student_submission.final_score if student_submission else None
+        
+        result.append(assignment_data)
+    
+    return result
+
+
 @router.get("/classrooms/{classroom_id}/members")
 async def get_members(classroom_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
