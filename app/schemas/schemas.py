@@ -7,13 +7,21 @@ from enum import Enum
 
 # ============= User Schemas =============
 
+class UserRole(str, Enum):
+    """Valid user roles."""
+    STUDENT = "student"
+    TEACHER = "teacher"
+    PARENT = "parent"
+    ADMIN = "admin"
+
+
 class UserBase(BaseModel):
     """Base user schema."""
     phone_number: Optional[str] = None
     email: Optional[EmailStr] = None
     username: Optional[str] = None
     full_name: Optional[str] = None
-    role: Optional[str] = "student"  # "student", "teacher", "parent"
+    role: Optional[UserRole] = UserRole.STUDENT
     
     @validator('phone_number')
     def validate_phone(cls, v):
@@ -26,6 +34,14 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for user registration."""
     password: str = Field(..., min_length=6)
+    role: UserRole = UserRole.STUDENT  # Force default, no admin creation via API
+    
+    @validator('role')
+    def validate_role_creation(cls, v):
+        """Prevent admin role creation via registration."""
+        if v == UserRole.ADMIN:
+            raise ValueError('Admin accounts cannot be created via registration')
+        return v
     
     @validator('email', 'phone_number')
     def at_least_one_identifier(cls, v, values):

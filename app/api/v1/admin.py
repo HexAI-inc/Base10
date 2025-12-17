@@ -28,18 +28,21 @@ router = APIRouter()
 
 def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
     """Verify user has admin role."""
-    # TODO: Add is_admin field to User model or check against admin email list
-    ADMIN_EMAILS = [
-        "cjalloh25@gmail.com",
-        "esjallow03@gmail.com",
-        # Add your team emails here
-    ]
+    from app.core.rbac import UserRole, is_admin
     
-    if current_user.email not in ADMIN_EMAILS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
+    # Check if user has admin role
+    if not is_admin(current_user):
+        # Fallback to email whitelist for legacy admin accounts
+        LEGACY_ADMIN_EMAILS = [
+            "cjalloh25@gmail.com",
+            "esjallow03@gmail.com",
+        ]
+        
+        if current_user.email not in LEGACY_ADMIN_EMAILS:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required. Please contact system administrator."
+            )
     
     return current_user
 
@@ -849,3 +852,108 @@ async def resolve_report(
         "resolved_by": admin.email,
         "timestamp": datetime.now(timezone.utc)
     }
+
+
+# ============= User Role Management =============
+
+class RoleChangeRequest(BaseModel):
+    """Request to change user role."""
+    new_role: str
+    reason: Optional[str] = None
+
+
+@router.post("/admin/users/{user_id}/role")
+async def change_user_role(
+    user_id: int,
+    role_data: RoleChangeRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """
+    Change a user's role (admin only).
+    
+    Use cases:
+    - Promote student to teacher
+    - Grant admin access
+    - Demote user if needed
+    """
+    from app.core.rbac import UserRole
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Validate role
+    valid_roles = [r.value for r in UserRole]
+    if role_data.new_role not in valid_roles:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
+        )
+    
+    # Get target user
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent self-demotion from admin
+    if admin.id == target_user.id and target_user.role == UserRole.ADMIN.value and role_data.new_role != UserRole.ADMIN.value:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove your own admin privileges"
+        )
+    
+    old_role = target_user.role
+    target_user.role = role_data.new_role
+    db.commit()
+    
+    logger.info(
+        f"🔐 Admin {admin.id} ({admin.email}) changed user {user_id} ({target_user.email or target_user.phone_number}) "
+        f"role from '{old_role}' to '{role_data.new_role}'. Reason: {role_data.reason or 'Not provided'}"
+    )
+    
+    return {
+        "message": "Role updated successfully",
+        "user_id": user_id,
+        "user_email": target_user.email or target_user.phone_number,
+        "old_role": old_role,
+        "new_role": role_data.new_role,
+        "changed_by": admin.email
+    }
+
+
+@router.get("/admin/users/by-role/{role}")
+async def list_users_by_role(
+    role: str,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """List all users with a specific role."""
+    from app.core.rbac import UserRole
+    
+    valid_roles = [r.value for r in UserRole]
+    if role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}")
+    
+    users = db.query(User).filter(User.role == role).offset(skip).limit(limit).all()
+    
+    return {
+        "role": role,
+        "total": db.query(func.count(User.id)).filter(User.role == role).scalar(),
+        "users": [
+            {
+                "id": u.id,
+                "email": u.email,
+                "phone_number": u.phone_number,
+                "username": u.username,
+                "full_name": u.full_name,
+                "is_verified": u.is_verified,
+                "is_active": u.is_active,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "last_login": u.last_login.isoformat() if u.last_login else None
+            }
+            for u in users
+        ]
+    }
+

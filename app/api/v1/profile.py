@@ -208,6 +208,8 @@ async def update_profile(
     - Student progresses from JSS1 to JSS2 → update education_level
     - Student sets exam date → app can send reminders
     - Student chooses favorite subjects → filter sync to only those subjects
+    
+    Note: Role cannot be changed after account creation.
     """
     # Update fields if provided
     if updates.full_name is not None:

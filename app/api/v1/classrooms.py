@@ -123,6 +123,20 @@ async def get_class_stream(classroom_id: int, db: Session = Depends(get_db), use
 
 @router.post("/classrooms", status_code=status.HTTP_201_CREATED)
 async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """
+    Create a new classroom.
+    
+    Only teachers and admins can create classrooms.
+    """
+    from app.core.rbac import UserRole
+    
+    # Enforce role-based access
+    if user.role not in [UserRole.TEACHER.value, UserRole.ADMIN.value]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Only teachers can create classrooms. Please update your account role to 'teacher'."
+        )
+    
     from app.models.classroom import Classroom
     join_code = Classroom.generate_join_code()
     classroom = Classroom(
@@ -134,6 +148,9 @@ async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), 
     db.add(classroom)
     db.commit()
     db.refresh(classroom)
+    
+    logger.info(f"👩‍🏫 Teacher {user.id} ({user.full_name or user.username}) created classroom: {classroom.name}")
+    
     return {"id": classroom.id, "join_code": classroom.join_code}
 
 
