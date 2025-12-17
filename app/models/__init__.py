@@ -7,6 +7,7 @@ from app.models.otp import OTP
 from app.models.report import QuestionReport, ReportReason
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
 from app.models.classroom import Classroom, Assignment
+from app.models.student_profile import StudentProfile, TeacherMessage
 
 # Export all models for alembic autogenerate
 __all__ = [
@@ -24,4 +25,6 @@ __all__ = [
     "FlashcardReview",
     "Classroom",
     "Assignment",
+    "StudentProfile",
+    "TeacherMessage",
 ]
