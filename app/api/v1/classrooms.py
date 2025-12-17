@@ -38,6 +38,32 @@ class MaterialCreate(BaseModel):
     title: str
     description: Optional[str] = None
     asset_id: Optional[str] = None
+
+
+class ClassroomUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    subject: Optional[str] = Field(None, max_length=100)
+    grade_level: Optional[str] = Field(None, max_length=50)
+
+
+class AssignmentUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    subject_filter: Optional[str] = None
+    topic_filter: Optional[str] = None
+    difficulty_filter: Optional[str] = None
+    question_count: Optional[int] = Field(None, gt=0)
+    assignment_type: Optional[str] = None
+    max_points: Optional[int] = Field(None, gt=0)
+    status: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+
+class MaterialUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    asset_id: Optional[str] = None
     url: Optional[str] = None
 
 
@@ -162,6 +188,63 @@ async def get_classroom(classroom_id: int, db: Session = Depends(get_db), user: 
     }
 
 
+@router.put("/classrooms/{classroom_id}")
+async def update_classroom(
+    classroom_id: int, 
+    update_data: ClassroomUpdate,
+    db: Session = Depends(get_db), 
+    user: User = Depends(get_current_user)
+):
+    """Update classroom details. Only the teacher can update."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    
+    # Only teacher can update
+    if classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can update this classroom")
+    
+    # Update fields that are provided
+    update_dict = update_data.model_dump(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(classroom, field, value)
+    
+    db.commit()
+    db.refresh(classroom)
+    
+    return {
+        "id": classroom.id,
+        "name": classroom.name,
+        "description": classroom.description,
+        "subject": classroom.subject,
+        "grade_level": classroom.grade_level,
+        "is_active": classroom.is_active,
+        "updated_at": classroom.updated_at.isoformat()
+    }
+
+
+@router.delete("/classrooms/{classroom_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_classroom(
+    classroom_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Soft delete a classroom by setting is_active to False. Only the teacher can delete."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    
+    # Only teacher can delete
+    if classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can delete this classroom")
+    
+    # Soft delete
+    classroom.is_active = False
+    db.commit()
+    
+    return None
+
+
 @router.post("/classrooms/join")
 async def join_classroom(join_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     classroom = db.query(Classroom).filter(
@@ -260,6 +343,67 @@ async def list_materials(classroom_id: int, db: Session = Depends(get_db), user:
         raise HTTPException(status_code=404, detail="Classroom not found")
     materials = db.query(ClassroomMaterial).filter(ClassroomMaterial.classroom_id == classroom_id).order_by(ClassroomMaterial.created_at.desc()).all()
     return materials
+
+
+@router.put("/classrooms/materials/{material_id}")
+async def update_material(
+    material_id: int,
+    update_data: MaterialUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Update material details. Only the teacher can update."""
+    # Get the material
+    material = db.query(ClassroomMaterial).filter(ClassroomMaterial.id == material_id).first()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    
+    # Check if user is the teacher of the classroom
+    classroom = db.query(Classroom).filter(Classroom.id == material.classroom_id).first()
+    if not classroom or classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can update this material")
+    
+    # Update fields that are provided
+    update_dict = update_data.model_dump(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(material, field, value)
+    
+    db.commit()
+    db.refresh(material)
+    
+    return {
+        "id": material.id,
+        "title": material.title,
+        "description": material.description,
+        "asset_id": material.asset_id,
+        "url": material.url,
+        "material_type": material.material_type,
+        "created_at": material.created_at.isoformat()
+    }
+
+
+@router.delete("/classrooms/materials/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_material(
+    material_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Delete a material. Only the teacher can delete."""
+    # Get the material
+    material = db.query(ClassroomMaterial).filter(ClassroomMaterial.id == material_id).first()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    
+    # Check if user is the teacher of the classroom
+    classroom = db.query(Classroom).filter(Classroom.id == material.classroom_id).first()
+    if not classroom or classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can delete this material")
+    
+    # Hard delete
+    db.delete(material)
+    db.commit()
+    
+    return None
 
 
 @router.get("/classrooms/{classroom_id}/assignments")
@@ -388,6 +532,72 @@ async def create_manual_assignment(classroom_id: int, payload: ManualAssignmentC
     db.commit()
     db.refresh(assignment)
     return {"id": assignment.id, "detail": "created"}
+
+
+@router.put("/classrooms/assignments/{assignment_id}")
+async def update_assignment(
+    assignment_id: int,
+    update_data: AssignmentUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Update assignment details. Only the teacher can update."""
+    # Get the assignment
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Check if user is the teacher of the classroom
+    classroom = db.query(Classroom).filter(Classroom.id == assignment.classroom_id).first()
+    if not classroom or classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can update this assignment")
+    
+    # Update fields that are provided
+    update_dict = update_data.model_dump(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(assignment, field, value)
+    
+    db.commit()
+    db.refresh(assignment)
+    
+    return {
+        "id": assignment.id,
+        "title": assignment.title,
+        "description": assignment.description,
+        "subject_filter": assignment.subject_filter,
+        "topic_filter": assignment.topic_filter,
+        "difficulty_filter": assignment.difficulty_filter,
+        "question_count": assignment.question_count,
+        "assignment_type": assignment.assignment_type,
+        "max_points": assignment.max_points,
+        "status": assignment.status,
+        "due_date": assignment.due_date.isoformat() if assignment.due_date else None,
+        "updated_at": assignment.updated_at.isoformat()
+    }
+
+
+@router.delete("/classrooms/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Delete an assignment. Only the teacher can delete."""
+    # Get the assignment
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Check if user is the teacher of the classroom
+    classroom = db.query(Classroom).filter(Classroom.id == assignment.classroom_id).first()
+    if not classroom or classroom.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the teacher can delete this assignment")
+    
+    # Hard delete (submissions will be cascade deleted due to relationship)
+    db.delete(assignment)
+    db.commit()
+    
+    return None
 
 
 @router.post("/classrooms/assignments/{assignment_id}/submit")

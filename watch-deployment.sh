@@ -9,8 +9,8 @@
 # 3. Get your App ID from DO dashboard URL or run: doctl apps list
 
 # Configuration
-APP_NAME="base10-backend"
-REFRESH_INTERVAL=5  # seconds
+APP_NAME="1a03ec26-533e-4611-8583-1be73d259a00 "
+REFRESH_INTERVAL=60  # seconds
 
 # Colors for output
 RED='\033[0;31m'
