@@ -5,11 +5,15 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
+import logging
 
 from app.db.session import get_db
 from app.models.classroom import Classroom, ClassroomPost, ClassroomMaterial, Assignment, Submission, classroom_students
 from app.models.user import User
 from app.core.security import get_current_user
+from app.services.comms_service import CommunicationService, MessageType, MessagePriority
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -281,6 +285,38 @@ async def post_announcement(classroom_id: int, payload: StreamPostCreate, db: Se
     db.add(post)
     db.commit()
     db.refresh(post)
+    
+    # 🔔 Notify all students in the classroom
+    try:
+        comms = CommunicationService()
+        students = classroom.students
+        
+        # Truncate content for notification (first 100 chars)
+        preview = payload.content[:100] + "..." if len(payload.content) > 100 else payload.content
+        
+        for student in students:
+            comms.send_notification(
+                user_id=student.id,
+                message_type=MessageType.ACHIEVEMENT_UNLOCKED,  # Using existing type
+                priority=MessagePriority.MEDIUM,
+                title=f"📢 {classroom.name}",
+                body=f"{user.full_name or user.username}: {preview}",
+                data={
+                    "type": "classroom_announcement",
+                    "classroom_id": classroom_id,
+                    "post_id": post.id,
+                    "classroom_name": classroom.name
+                },
+                user_phone=student.phone_number,
+                user_email=student.email,
+                has_app_installed=student.has_app_installed or False
+            )
+        
+        logger.info(f"📢 Announcement notifications sent to {len(students)} students in classroom {classroom_id}")
+    except Exception as e:
+        logger.error(f"❌ Failed to send announcement notifications: {e}")
+        # Don't fail the request if notifications fail
+    
     return post
 
 
@@ -531,6 +567,42 @@ async def create_manual_assignment(classroom_id: int, payload: ManualAssignmentC
     db.add(assignment)
     db.commit()
     db.refresh(assignment)
+    
+    # 🔔 Notify all students about new assignment
+    try:
+        comms = CommunicationService()
+        students = classroom.students
+        
+        # Format due date for notification
+        due_text = f" (Due: {payload.due_date.strftime('%b %d')})" if payload.due_date else ""
+        
+        for student in students:
+            # Use HIGH priority if due within 24 hours, otherwise MEDIUM
+            priority = MessagePriority.HIGH if (payload.due_date and (payload.due_date - datetime.utcnow()).days < 1) else MessagePriority.MEDIUM
+            
+            comms.send_notification(
+                user_id=student.id,
+                message_type=MessageType.ACHIEVEMENT_UNLOCKED,  # Using existing type
+                priority=priority,
+                title=f"📝 New Assignment: {classroom.name}",
+                body=f"{payload.title}{due_text}",
+                data={
+                    "type": "assignment_created",
+                    "classroom_id": classroom_id,
+                    "assignment_id": assignment.id,
+                    "classroom_name": classroom.name,
+                    "due_date": payload.due_date.isoformat() if payload.due_date else None
+                },
+                user_phone=student.phone_number,
+                user_email=student.email,
+                has_app_installed=student.has_app_installed or False
+            )
+        
+        logger.info(f"📝 Assignment notifications sent to {len(students)} students in classroom {classroom_id}")
+    except Exception as e:
+        logger.error(f"❌ Failed to send assignment notifications: {e}")
+        # Don't fail the request if notifications fail
+    
     return {"id": assignment.id, "detail": "created"}
 
 
@@ -649,7 +721,42 @@ async def grade_submission(submission_id: int, payload: GradeCreate, db: Session
     db.add(sub)
     db.commit()
     db.refresh(sub)
-    # TODO: Trigger notification / sync flag for student
+    
+    # 🔔 Notify student about grade
+    try:
+        comms = CommunicationService()
+        student = db.query(User).filter(User.id == sub.student_id).first()
+        
+        if student:
+            # Calculate percentage
+            percentage = (payload.grade / assignment.max_points * 100) if assignment.max_points > 0 else 0
+            grade_emoji = "🎉" if percentage >= 80 else "✅" if percentage >= 60 else "📊"
+            
+            comms.send_notification(
+                user_id=student.id,
+                message_type=MessageType.QUIZ_RESULT,
+                priority=MessagePriority.MEDIUM,
+                title=f"{grade_emoji} Assignment Graded: {classroom.name}",
+                body=f"{assignment.title}: {payload.grade}/{assignment.max_points} ({percentage:.0f}%)",
+                data={
+                    "type": "assignment_graded",
+                    "classroom_id": classroom.id,
+                    "assignment_id": assignment.id,
+                    "submission_id": sub.id,
+                    "grade": payload.grade,
+                    "max_points": assignment.max_points,
+                    "percentage": percentage
+                },
+                user_phone=student.phone_number,
+                user_email=student.email,
+                has_app_installed=student.has_app_installed or False
+            )
+            
+            logger.info(f"📊 Grade notification sent to student {student.id} for submission {sub.id}")
+    except Exception as e:
+        logger.error(f"❌ Failed to send grade notification: {e}")
+        # Don't fail the request if notifications fail
+    
     return {"detail": "graded", "id": sub.id}
 
 
