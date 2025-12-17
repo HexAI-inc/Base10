@@ -957,3 +957,51 @@ async def list_users_by_role(
         ]
     }
 
+
+@router.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """
+    Delete a user account (admin only).
+    
+    This is a hard delete. Use with caution.
+    Related data (attempts, classrooms, etc.) will be handled by database cascade rules.
+    """
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Prevent self-deletion
+    if admin.id == user_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete your own account"
+        )
+    
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Store info for logging before deletion
+    user_identifier = target_user.email or target_user.phone_number or target_user.username
+    user_role = target_user.role
+    
+    # Delete user (cascade will handle related records)
+    db.delete(target_user)
+    db.commit()
+    
+    logger.warning(
+        f"🗑️  Admin {admin.id} ({admin.email}) deleted user {user_id} "
+        f"({user_identifier}, role: {user_role})"
+    )
+    
+    return {
+        "message": "User deleted successfully",
+        "user_id": user_id,
+        "user_identifier": user_identifier,
+        "deleted_by": admin.email
+    }
+
