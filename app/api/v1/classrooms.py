@@ -129,7 +129,7 @@ async def list_classrooms(db: Session = Depends(get_db), user: User = Depends(ge
 async def join_classroom(join_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     classroom = db.query(Classroom).filter(
         Classroom.join_code == join_data.get('join_code'),
-        Classroom.is_active == 1
+        Classroom.is_active == True
     ).first()
     if not classroom:
         raise HTTPException(status_code=404, detail="Classroom not found or inactive")

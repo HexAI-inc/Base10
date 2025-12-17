@@ -1,5 +1,5 @@
 """Classroom and Assignment models for teacher features."""
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Table, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
@@ -42,7 +42,7 @@ class Classroom(Base):
     join_code = Column(String(12), unique=True, index=True, nullable=False)  # e.g., "MATH-778"
     
     # Status
-    is_active = Column(Integer, default=1)  # 1=active, 0=archived
+    is_active = Column(Boolean, default=True)  # True=active, False=archived
     
     # Tracking
     created_at = Column(DateTime(timezone=True), server_default=func.now())
