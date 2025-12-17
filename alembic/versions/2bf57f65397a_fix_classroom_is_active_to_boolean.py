@@ -24,13 +24,29 @@ def upgrade() -> None:
     dialect = bind.dialect.name
     
     if dialect == 'postgresql':
-        # PostgreSQL: Convert integer to boolean
-        # First convert existing values: 1 -> true, 0 -> false, NULL -> false
-        op.execute("UPDATE classrooms SET is_active = CASE WHEN is_active = 1 THEN true ELSE false END")
-        # Then alter the column type
-        op.execute("ALTER TABLE classrooms ALTER COLUMN is_active TYPE BOOLEAN USING (is_active::integer::boolean)")
+        # Check current column type
+        result = bind.execute(sa.text("""
+            SELECT data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'classrooms' AND column_name = 'is_active'
+        """))
+        current_type = result.fetchone()[0] if result.rowcount > 0 else None
+        
+        if current_type == 'integer':
+            # Column is INTEGER, convert to BOOLEAN
+            # First convert existing values: 1 -> true, 0 -> false, NULL -> false
+            op.execute("UPDATE classrooms SET is_active = CASE WHEN is_active = 1 THEN 1 ELSE 0 END WHERE is_active IS NOT NULL")
+            # Then alter the column type
+            op.execute("ALTER TABLE classrooms ALTER COLUMN is_active TYPE BOOLEAN USING (CASE WHEN is_active = 1 THEN TRUE ELSE FALSE END)")
+        elif current_type == 'boolean':
+            # Already BOOLEAN, nothing to do
+            pass
+        else:
+            # Unknown type, try to convert anyway
+            op.execute("ALTER TABLE classrooms ALTER COLUMN is_active TYPE BOOLEAN USING (CASE WHEN is_active::integer = 1 THEN TRUE ELSE FALSE END)")
+    
     elif dialect == 'sqlite':
-        # SQLite: Already works with integers for booleans, but let's ensure consistency
+        # SQLite: Already works with integers for booleans
         # SQLite doesn't have ALTER COLUMN TYPE, so we use Python default handling
         pass
 
