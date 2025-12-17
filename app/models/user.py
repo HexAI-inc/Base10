@@ -36,7 +36,7 @@ class User(Base):
     verification_token_expires = Column(DateTime(timezone=True), nullable=True)  # Token expiration (24 hours)
     
     # User role for onboarding flows
-    role = Column(String(50), nullable=True, default="student")  # "student", "teacher", "parent"
+    role = Column(String(50), nullable=True, default="student")  # "student", "teacher", "admin"
     
     # User profile & preferences (NEW: for content filtering)
     education_level = Column(String(50), nullable=True)  # "JSS1", "JSS3", "WASSCE", "GABECE"

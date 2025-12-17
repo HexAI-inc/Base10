@@ -10,10 +10,9 @@ class UserRole:
     """User role constants."""
     STUDENT = "student"
     TEACHER = "teacher"
-    PARENT = "parent"
     ADMIN = "admin"
     
-    ALL_ROLES = [STUDENT, TEACHER, PARENT, ADMIN]
+    ALL_ROLES = [STUDENT, TEACHER, ADMIN]
     
     @classmethod
     def validate(cls, role: str) -> bool:
@@ -88,11 +87,6 @@ def is_student(user: User) -> bool:
 def is_admin(user: User) -> bool:
     """Check if user is an admin."""
     return user.role == UserRole.ADMIN
-
-
-def is_parent(user: User) -> bool:
-    """Check if user is a parent."""
-    return user.role == UserRole.PARENT
 
 
 def can_access_classroom_as_teacher(user: User, teacher_id: int) -> bool:

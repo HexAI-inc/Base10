@@ -11,7 +11,6 @@ class UserRole(str, Enum):
     """Valid user roles."""
     STUDENT = "student"
     TEACHER = "teacher"
-    PARENT = "parent"
     ADMIN = "admin"
 
 
