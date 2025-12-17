@@ -1,0 +1,35 @@
+/* Flashcard Math Display Improvements */
+
+.flashcard-text-front .katex,
+.flashcard-text-back .katex,
+.flashcard-text-explanation .katex {
+    font-size: 1.1em !important;
+    line-height: 1.6;
+}
+
+/* Display math should be larger and centered */
+.flashcard-text-front .katex-display,
+.flashcard-text-back .katex-display,
+.flashcard-text-explanation .katex-display {
+    font-size: 1.2em !important;
+    margin: 0.5em 0;
+    text-align: center;
+}
+
+/* Ensure proper wrapping for long equations */
+.flashcard-text-front,
+.flashcard-text-back,
+.flashcard-text-explanation {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Better visibility for math in flashcards */
+.flashcard-face .katex {
+    color: inherit;
+}
+
+/* Fix subscripts and superscripts spacing */
+.katex .mord + .msupsub {
+    margin-left: 0.05em;
+}

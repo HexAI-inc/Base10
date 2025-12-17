@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WaeGPT | Ace Your Exams</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Your personal AI tutor for WAEC exam preparation">
+    <meta name="theme-color" content="#22c55e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WaeGPT">
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tech Stack -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="/static/css/enhanced.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        
+        /* Chat Styles */
+        .chat-bubble { max-width: 85%; padding: 16px 20px; border-radius: 20px; margin-bottom: 16px; font-size: 1rem; line-height: 1.8; position: relative; word-wrap: break-word; }
+        .user-msg { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); font-size: 1rem; }
+        .ai-msg { background-color: #f1f5f9; color: #334155; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e2e8f0; font-size: 1.05rem; }
+        .dark .ai-msg { background-color: #1e293b; color: #e2e8f0; border-color: #334155; }
+        
+        /* Better paragraph spacing */
+        .chat-bubble p { margin-bottom: 1em; }
+        .chat-bubble p:last-child { margin-bottom: 0; }
+        .chat-bubble h1, .chat-bubble h2, .chat-bubble h3 { margin-top: 1.2em; margin-bottom: 0.8em; font-weight: 700; }
+        .chat-bubble ul, .chat-bubble ol { margin: 1em 0; padding-left: 1.5em; }
+        .chat-bubble li { margin-bottom: 0.5em; line-height: 1.6; }
+        .chat-bubble code { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        .chat-bubble strong { font-weight: 600; }
+        
+        /* Markdown content specific */
+        .markdown-content { line-height: 1.8; }
+        .markdown-content > *:first-child { margin-top: 0; }
+        .markdown-content > *:last-child { margin-bottom: 0; }
+        .markdown-content p + p { margin-top: 1em; }
+        .markdown-content h1 { font-size: 1.5em; font-weight: 700; }
+        .markdown-content h2 { font-size: 1.3em; font-weight: 700; }
+        .markdown-content h3 { font-size: 1.15em; font-weight: 600; }
+        .markdown-content ul li, .markdown-content ol li { padding-left: 0.5em; }
+        .user-msg { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); font-size: 1rem; }
+        .ai-msg { background-color: #f1f5f9; color: #334155; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e2e8f0; font-size: 1.05rem; }
+        .dark .ai-msg { background-color: #1e293b; color: #e2e8f0; border-color: #334155; }
+        
+        /* Better paragraph spacing */
+        .chat-bubble p { margin-bottom: 1em; }
+        .chat-bubble p:last-child { margin-bottom: 0; }
+        .chat-bubble h1, .chat-bubble h2, .chat-bubble h3 { margin-top: 1.2em; margin-bottom: 0.8em; font-weight: 700; }
+        .chat-bubble ul, .chat-bubble ol { margin: 1em 0; padding-left: 1.5em; }
+        .chat-bubble li { margin-bottom: 0.5em; }
+        .chat-bubble code { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        
+        /* Message Controls */
+        .message-controls { opacity: 0; transition: opacity 0.2s; }
+        .chat-bubble:hover .message-controls { opacity: 1; }
+        .control-btn { padding: 6px; border-radius: 8px; color: #94a3b8; transition: all 0.2s; }
+        .control-btn:hover { background: rgba(255, 255, 255, 0.1); color: #22c55e; }
+        
+        /* SVG & Math */
+        .chat-bubble svg { display: block; margin: 10px auto; max-width: 100%; height: auto; background-color: #0f172a; border-radius: 8px; padding: 10px; border: 1px solid #334155; }
+        .chat-bubble path, .chat-bubble line, .chat-bubble rect, .chat-bubble circle { stroke: #4ade80; stroke-width: 2; fill: none; }
+        .chat-bubble text { fill: #94a3b8; font-size: 12px; font-family: monospace; }
+
+        /* Transitions */
+        .view-transition { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hidden-view { display: none; opacity: 0; pointer-events: none; }
+        
+        /* Glassmorphism */
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .dark .glass { background: rgba(15, 23, 42, 0.6); }
+        
+        /* Toast Notifications */
+        .toast { 
+            padding: 12px 20px; 
+            border-radius: 12px; 
+            background: #1e293b; 
+            border: 1px solid #334155; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            min-width: 250px;
+            transition: all 0.3s;
+        }
+        .toast-success { border-color: #22c55e; }
+        .toast-error { border-color: #ef4444; }
+        .toast-warning { border-color: #f59e0b; }
+        .toast-info { border-color: #3b82f6; }
+        .toast-icon { font-size: 20px; }
+        .toast-message { color: #e2e8f0; font-size: 14px; }
+        
+        /* Difficulty Button */
+        .difficulty-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.2s;
+            border: none;
+            width: 100%;
+        }
+        
+        /* Flashcard */
+        .flashcard { perspective: 1000px; }
+        .flashcard-front, .flashcard-back {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+        .flashcard:hover .flashcard-front, .flashcard:hover .flashcard-back {
+            border-color: #22c55e;
+        }
+        
+        /* Larger tap targets for mobile */
+        @media (max-width: 768px) {
+            button, a, input[type="radio"], input[type="checkbox"] {
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+        
+        /* Focus indicators for accessibility */
+        *:focus-visible {
+            outline: 2px solid #22c55e;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-gray-100 h-[100dvh] w-screen overflow-hidden transition-colors duration-300 font-sans relative">
+
+    <!-- NAV BAR (Fixed Top) -->
+    <nav class="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-50 bg-gradient-to-b from-gray-50/90 to-transparent dark:from-dark-bg/90 pointer-events-none">
+        <div class="flex items-center gap-2 cursor-pointer pointer-events-auto" onclick="location.reload()">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                <span class="text-white font-bold text-lg">W</span>
+            </div>
+            <span class="font-display font-bold text-xl tracking-tight backdrop-blur-sm rounded-lg px-2">Wae<span class="text-brand-500">GPT</span></span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="streak-display" class="hidden pointer-events-auto px-3 py-1 bg-orange-600/20 border border-orange-600/50 rounded-full text-xs font-bold text-orange-400"></div>
+            <button onclick="showMobileMenu()" class="pointer-events-auto p-2 rounded-full bg-white/10 backdrop-blur-md border border-gray-200/20 shadow-sm hover:bg-white/20 transition md:hidden" title="Menu">
+                <span>☰</span>
+            </button>
+            <button onclick="showStatsPanel()" class="pointer-events-auto p-2 rounded-full bg-white/10 backdrop-blur-md border border-gray-200/20 shadow-sm hover:bg-white/20 transition hidden md:block" title="Statistics">
+                <span>📊</span>
+            </button>
+            <button onclick="showStudyPlanner()" class="pointer-events-auto p-2 rounded-full bg-white/10 backdrop-blur-md border border-gray-200/20 shadow-sm hover:bg-white/20 transition hidden md:block" title="Study Planner">
+                <span>📅</span>
+            </button>
+            <button onclick="toggleTheme()" class="pointer-events-auto p-2 rounded-full bg-white/10 backdrop-blur-md border border-gray-200/20 shadow-sm hover:bg-white/20 transition" title="Toggle theme">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- === VIEW 1: LANDING PAGE (Centered) === -->
+    <main id="landing-view" class="absolute inset-0 flex flex-col justify-center items-center p-6 z-40 bg-gray-50 dark:bg-dark-bg transition-transform duration-500">
+        
+        <div class="text-center max-w-2xl mx-auto mb-8 animate-slide-up">
+            <div class="inline-block px-3 py-1 mb-4 text-[10px] font-bold tracking-widest text-brand-600 uppercase bg-brand-100 rounded-full dark:bg-brand-900/30 dark:text-brand-400">
+                WAEC AI Tutor
+            </div>
+            <h1 class="font-display text-5xl md:text-7xl font-extrabold mb-6 tracking-tight">
+                Smash Your <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-emerald-400">Exams.</span>
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
+                Your personal AI tutor for Mathematics, English, and Science. tailored for the WAEC syllabus.
+            </p>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-2 gap-3 w-full max-w-2xl mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+            <button onclick="startChat('Mathematics')" class="glass p-4 rounded-2xl hover:bg-brand-500/10 hover:border-brand-500/50 transition text-left group">
+                <span class="text-2xl mb-2 block group-hover:scale-110 transition origin-left">📐</span>
+                <span class="font-bold block">Mathematics</span>
+            </button>
+            <button onclick="startChat('English')" class="glass p-4 rounded-2xl hover:bg-purple-500/10 hover:border-purple-500/50 transition text-left group">
+                <span class="text-2xl mb-2 block group-hover:scale-110 transition origin-left">✍️</span>
+                <span class="font-bold block">English</span>
+            </button>
+        </div>
+
+        <!-- Input -->
+        <div class="w-full max-w-lg relative animate-slide-up" style="animation-delay: 0.2s;">
+            <input type="text" id="landing-input" 
+                class="w-full bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-full py-4 pl-6 pr-14 shadow-2xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-base"
+                placeholder="What do you want to learn today?"
+                onkeypress="if(event.key === 'Enter') startChat('General', this.value)">
+            <button onclick="startChat('General', document.getElementById('landing-input').value)" 
+                class="absolute right-2 top-2 p-2 bg-brand-500 text-white rounded-full hover:bg-brand-600 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+        </div>
+    </main>
+
+    <!-- === VIEW 2: CHAT INTERFACE (Full Screen Overlay) === -->
+    <div id="chat-interface" class="fixed inset-0 z-30 flex flex-col bg-gray-50 dark:bg-dark-bg translate-y-[100%] transition-transform duration-500">
+        
+        <!-- Header Spacer -->
+        <div class="h-16 shrink-0 bg-gradient-to-b from-gray-50 to-transparent dark:from-dark-bg z-10"></div>
+
+        <!-- Chat Area (Takes remaining space with padding for fixed input) -->
+        <div id="chat-box" class="flex-1 overflow-y-auto px-4 pb-40 flex flex-col gap-4 scroll-smooth">
+            <!-- Chat bubbles go here -->
+        </div>
+
+        <!-- Input Area (Fixed at Bottom of Screen) -->
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-lg border-t border-gray-200 dark:border-dark-border z-40">
+            
+            <!-- Input Bar -->
+            <div class="max-w-3xl mx-auto flex items-end gap-2 bg-white dark:bg-dark-card p-2 rounded-3xl border border-gray-200 dark:border-dark-border shadow-lg focus-within:ring-2 focus-within:ring-brand-500 transition-all mb-2">
+                <button id="mic-btn" onclick="toggleMic()" class="p-3 text-gray-400 hover:text-brand-500 transition rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </button>
+
+                <textarea id="user-input" rows="1" 
+                    class="flex-1 bg-transparent border-none focus:ring-0 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none max-h-32 leading-relaxed text-base" 
+                    placeholder="Ask WaeGPT..."
+                    oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+
+                <button onclick="sendMessage()" class="p-3 bg-brand-500 text-white rounded-full hover:bg-brand-600 shadow-md transition transform active:scale-95">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex justify-center gap-2 max-w-3xl mx-auto">
+                <button onclick="triggerQuiz()" class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 bg-brand-500/10 text-brand-600 dark:text-brand-400 px-4 py-2 rounded-full hover:bg-brand-500/20 transition" title="Ctrl+K">
+                    <span>⚡</span> Take a Quiz
+                </button>
+                <button onclick="exportChat()" class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full hover:bg-blue-500/20 transition" title="Ctrl+E">
+                    <span>📥</span> Export Chat
+                </button>
+            </div>
+            
+            <!-- Hidden Subject Select -->
+            <select id="subject" class="hidden"><option value="General">General</option><option value="Mathematics">Mathematics</option><option value="English">English</option><option value="Physics">Physics</option></select>
+        </div>
+    </div>
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+
+                <button onclick="sendMessage()" class="p-3 bg-brand-500 text-white rounded-full hover:bg-brand-600 shadow-md transition transform active:scale-95">
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="/static/js/voice.js"></script>
+    <script src="/static/js/features.js"></script>
+    <script src="/static/js/mobile.js"></script>
+    <script src="/static/js/main.js"></script>
+            <select id="subject" class="hidden"><option value="General">General</option><option value="Mathematics">Mathematics</option><option value="English">English</option><option value="Physics">Physics</option></select>
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="/static/js/voice.js"></script>
+    <script src="/static/js/features.js"></script>
+    <script src="/static/js/main.js"></script>
+    
+    <!-- PWA Installation Script -->
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+        
+        // PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button after a delay
+            setTimeout(() => {
+                if (deferredPrompt && !localStorage.getItem('pwa-dismissed')) {
+                    showToast('📲 Install WaeGPT for offline access!', 'info', 5000);
+                }
+            }, 10000);
+        });
+        
+        // Show keyboard shortcuts helper
+        function showKeyboardShortcuts() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            
+            modal.innerHTML = `
+                <div class="bg-dark-card rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border border-dark-border animate-slide-up">
+                    <h2 class="font-display text-2xl font-bold mb-4">⌨️ Keyboard Shortcuts</h2>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center p-3 bg-dark-bg rounded-lg">
+                            <span class="text-gray-400">Send message</span>
+                            <kbd class="px-3 py-1 bg-gray-700 rounded font-mono text-xs">Ctrl + Enter</kbd>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-dark-bg rounded-lg">
+                            <span class="text-gray-400">Take quiz</span>
+                            <kbd class="px-3 py-1 bg-gray-700 rounded font-mono text-xs">Ctrl + K</kbd>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-dark-bg rounded-lg">
+                            <span class="text-gray-400">Export chat</span>
+                            <kbd class="px-3 py-1 bg-gray-700 rounded font-mono text-xs">Ctrl + E</kbd>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-dark-bg rounded-lg">
+                            <span class="text-gray-400">Close modal</span>
+                            <kbd class="px-3 py-1 bg-gray-700 rounded font-mono text-xs">Esc</kbd>
+                        </div>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" 
+                        class="w-full mt-6 py-3 bg-brand-500 hover:bg-brand-600 rounded-xl font-bold transition">
+                        Got it!
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // Show shortcuts on first visit
+        setTimeout(() => {
+            if (!localStorage.getItem('shortcuts-shown')) {
+                showKeyboardShortcuts();
+                localStorage.setItem('shortcuts-shown', 'true');
+            }
+        }, 3000);
+    </script>
+    <!-- SCRIPTS -->
+    <script src="/static/js/voice.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Updated Animation Logic
+        function startChat(subject, initialQuery = "") {
+            document.getElementById('subject').value = subject;
+            
+            const landing = document.getElementById('landing-view');
+            const chat = document.getElementById('chat-interface');
+            
+            // Slide Landing Up and Away
+            landing.style.transform = 'translateY(-100%)';
+            landing.style.opacity = '0';
+            
+            // Slide Chat In from Bottom
+            chat.style.transform = 'translateY(0)';
+            
+            setTimeout(() => {
+                landing.style.display = 'none'; // Performance optimization
+                if (initialQuery.trim()) {
+                    document.getElementById('user-input').value = initialQuery;
+                    sendMessage();
+                } else {
+                    addBubble(`Hello! I am your <b>${subject}</b> tutor. Ask me to explain a concept, or tap "Take a Quiz" to test yourself.`, 'ai-msg', true);
+                }
+            }, 500);
+        }
+
+        function triggerQuiz() {
+            // Helper to manually trigger quiz from button
+            const subject = document.getElementById('subject').value;
+            // Send a hidden message to AI to trigger its logic
+            document.getElementById('user-input').value = `Give me a ${subject} quiz`;
+            sendMessage();
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-icon').innerText = isDark ? '🌙' : '☀️';
+        }
+    </script>
+</body>
+</html>

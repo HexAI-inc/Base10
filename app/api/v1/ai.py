@@ -43,6 +43,7 @@ class ChatRequest(BaseModel):
     history: List[ChatMessage] = Field(default_factory=list, description="Previous conversation history")
     subject: Optional[str] = Field(None, description="Subject context (MATHEMATICS, PHYSICS, etc.)")
     topic: Optional[str] = Field(None, description="Specific topic for context")
+    socratic_mode: bool = Field(False, description="Use Socratic teaching method (guide student to discover answer)")
 
 
 class ChatResponse(BaseModel):
@@ -179,7 +180,8 @@ async def chat_tutor(
             history=request.history,
             subject=request.subject,
             topic=request.topic,
-            user_level=current_user.education_level
+            user_level=current_user.education_level,
+            socratic_mode=request.socratic_mode
         )
         
         # Generate related topics based on subject
@@ -238,7 +240,7 @@ async def ai_status(current_user: User = Depends(get_current_user)):
     """
     # Check if services are available
     try:
-        from app.services.ai_service import generate_explanation, chat_with_ai
+        from app.services.ai_service import generate_explanation, chat_with_ai, generate_quiz
         services_available = True
     except ImportError:
         services_available = False
@@ -252,7 +254,83 @@ async def ai_status(current_user: User = Depends(get_current_user)):
         "features": {
             "explain": True,
             "chat": services_available,
+            "quiz_generation": services_available,
+            "socratic_mode": services_available,
             "premium": False  # Could check subscription status
         },
         "message": "AI services ready" if services_available else "AI services not configured"
     }
+
+
+@router.post("/generate-quiz")
+async def generate_ai_quiz(
+    subject: str = Query(..., description="Subject area (MATHEMATICS, CHEMISTRY, etc.)"),
+    topic: Optional[str] = Query(None, description="Specific topic (optional)"),
+    difficulty: str = Query("medium", regex="^(easy|medium|hard)$"),
+    num_questions: int = Query(5, ge=1, le=10, description="Number of questions (1-10)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a custom AI quiz based on subject and topic.
+    
+    **Use Case**: Student wants practice questions on a specific topic or difficulty level.
+    
+    **Parameters**:
+    - `subject`: Subject area (MATHEMATICS, CHEMISTRY, PHYSICS, etc.)
+    - `topic`: Specific topic (optional, e.g., "Quadratic Equations", "Atomic Structure")
+    - `difficulty`: Difficulty level (easy, medium, hard)
+    - `num_questions`: How many questions to generate (1-10)
+    
+    **Example Request**:
+    ```
+    POST /ai/generate-quiz?subject=MATHEMATICS&topic=Quadratic Equations&difficulty=medium&num_questions=5
+    ```
+    
+    **Response**:
+    ```json
+    {
+        "title": "Quadratic Equations Quiz",
+        "subject": "MATHEMATICS",
+        "topic": "Quadratic Equations",
+        "difficulty": "medium",
+        "num_questions": 5,
+        "questions": [
+            {
+                "question": "Solve the quadratic equation $x^2 - 5x + 6 = 0$",
+                "options": {
+                    "A": "$x = 2, 3$",
+                    "B": "$x = -2, -3$",
+                    "C": "$x = 1, 6$",
+                    "D": "$x = -1, -6$"
+                },
+                "correct_answer": "A",
+                "explanation": "Using factoring: $(x-2)(x-3) = 0$, so $x = 2$ or $x = 3$"
+            }
+        ]
+    }
+    ```
+    """
+    try:
+        from app.services.ai_service import generate_quiz
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="AI quiz generation service is currently unavailable."
+        )
+    
+    try:
+        quiz_data = await generate_quiz(
+            subject=subject,
+            topic=topic,
+            difficulty=difficulty,
+            num_questions=num_questions
+        )
+        
+        return quiz_data
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate quiz: {str(e)}"
+        )

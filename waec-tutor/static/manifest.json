@@ -1,0 +1,35 @@
+{
+  "name": "Base10 - WAEC AI Tutor",
+  "short_name": "Base10",
+  "description": "Your personal AI tutor for WAEC exam preparation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Take a Quiz",
+      "short_name": "Quiz",
+      "description": "Start a practice quiz",
+      "url": "/#quiz",
+      "icons": [{ "src": "/static/icons/quiz-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}
