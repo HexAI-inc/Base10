@@ -276,3 +276,42 @@ class UserStats(BaseModel):
     subjects_breakdown: List[SubjectStats]
     weak_topics: List[str]
     streak_days: int
+
+
+# ============= AI Schemas =============
+
+class ExplainRequest(BaseModel):
+    """Request to explain why a student's answer was wrong."""
+    question_id: int = Field(..., description="The question ID the student attempted")
+    student_answer: int = Field(..., ge=0, le=3, description="The option index (0-3) the student selected")
+    context: Optional[str] = Field(None, description="Additional context about student's confusion")
+
+
+class ExplainResponse(BaseModel):
+    """AI-generated explanation tailored to student's mistake."""
+    explanation: str = Field(..., description="Detailed explanation of why the answer was wrong and how to approach it correctly")
+    correct_answer: int = Field(..., description="The correct option index")
+    key_concepts: List[str] = Field(default_factory=list, description="Key concepts the student should review")
+    difficulty: str = Field(..., description="Question difficulty level")
+
+
+class ChatMessage(BaseModel):
+    """A single message in the conversation."""
+    role: str = Field(..., description="Either 'user' or 'assistant'")
+    content: str = Field(..., description="The message content")
+
+
+class ChatRequest(BaseModel):
+    """Request for conversational AI tutoring."""
+    message: str = Field(..., min_length=1, max_length=1000, description="Student's question or message")
+    history: List[ChatMessage] = Field(default_factory=list, description="Previous conversation history")
+    subject: Optional[str] = Field(None, description="Subject context (MATHEMATICS, PHYSICS, etc.)")
+    topic: Optional[str] = Field(None, description="Specific topic for context")
+    socratic_mode: bool = Field(False, description="Use Socratic teaching method (guide student to discover answer)")
+
+
+class ChatResponse(BaseModel):
+    """AI tutor's response."""
+    response: str = Field(..., description="AI tutor's helpful response")
+    suggestions: List[str] = Field(default_factory=list, description="Follow-up question suggestions")
+    related_topics: List[str] = Field(default_factory=list, description="Related topics to explore")

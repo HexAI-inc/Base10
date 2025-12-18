@@ -11,7 +11,7 @@ from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.models.question import Question
-from app.api.v1.ai import ChatMessage
+from app.schemas.schemas import ChatMessage
 
 logger = logging.getLogger(__name__)
 
