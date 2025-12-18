@@ -47,19 +47,6 @@ def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.post("/repair/bootstrap-admin")
-async def bootstrap_admin(db: Session = Depends(get_db)):
-    """One-time fix for Ebrima's account. Temporary endpoint."""
-    user = db.query(User).filter(User.email == "esjallow03@gmail.com").first()
-    if not user:
-        return {"error": "User not found"}
-    user.role = "admin"
-    user.is_onboarded = True
-    user.onboarding_step = 3
-    db.commit()
-    return {"message": "Ebrima is now an admin and onboarded", "user_id": user.id}
-
-
 # ============= Schemas =============
 
 class SystemHealth(BaseModel):
