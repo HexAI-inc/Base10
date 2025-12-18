@@ -29,6 +29,8 @@ class User(Base):
     # Account status
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)  # For email/SMS verification
+    is_onboarded = Column(Boolean, default=False)  # Whether they completed the setup wizard
+    onboarding_step = Column(Integer, default=0)  # Current step in onboarding (0-3)
     verified_at = Column(DateTime(timezone=True), nullable=True)  # When verified
     
     # Email verification

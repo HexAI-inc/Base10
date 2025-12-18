@@ -61,6 +61,8 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_verified: bool
+    is_onboarded: bool
+    onboarding_step: int
     role: str
     ai_quota_limit: int
     ai_quota_used: int
@@ -86,6 +88,34 @@ class DashboardStats(BaseModel):
     due_reviews: int
     today_attempts: int
     has_target_exam: bool
+
+
+# ============= Onboarding Schemas =============
+
+class StudentOnboardingRequest(BaseModel):
+    """Schema for student onboarding."""
+    education_level: str  # "JSS1", "JSS3", "WASSCE", "GABECE"
+    preferred_subjects: List[str]
+    target_exam_date: Optional[datetime] = None
+    learning_style: Optional[str] = None
+    study_time_preference: Optional[str] = None
+
+
+class TeacherOnboardingRequest(BaseModel):
+    """Schema for teacher onboarding."""
+    bio: Optional[str] = None
+    subjects_taught: List[str]
+    school_name: Optional[str] = None
+    first_classroom_name: str
+    first_classroom_subject: str
+    first_classroom_grade: str
+
+
+class OnboardingStatusResponse(BaseModel):
+    """Schema for onboarding status."""
+    is_onboarded: bool
+    onboarding_step: int
+    role: str
 
 
 # ============= Question Schemas =============

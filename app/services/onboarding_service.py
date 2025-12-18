@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
+from app.models.classroom import Classroom
 from app.services.email_templates import (
     get_welcome_email,
     get_verification_email,
@@ -13,6 +14,7 @@ from app.services.email_templates import (
 )
 from app.services.comms_service import CommunicationService, MessageType, MessagePriority
 from app.core.config import settings
+import json
 import secrets
 import logging
 
@@ -299,3 +301,116 @@ Let's support their learning journey! 📚
         except Exception as e:
             logger.error(f"Failed to send classroom creation email: {e}")
             return False
+
+    async def complete_student_onboarding(self, user: User, data: dict) -> User:
+        """
+        Complete student onboarding by updating profile and setting is_onboarded=True
+        """
+        try:
+            user.education_level = data.get("education_level")
+            if data.get("preferred_subjects"):
+                user.preferred_subjects = json.dumps(data.get("preferred_subjects"))
+            
+            user.target_exam_date = data.get("target_exam_date")
+            user.learning_style = data.get("learning_style")
+            user.study_time_preference = data.get("study_time_preference")
+            
+            user.is_onboarded = True
+            user.onboarding_step = 3  # Final step
+            
+            self.db.commit()
+            self.db.refresh(user)
+            
+            logger.info(f"✅ Student onboarding completed for {user.email or user.phone_number}")
+            
+            # Award "Early Bird" or "Welcome" badge
+            self._award_badge(user, {
+                "id": "welcome_pioneer",
+                "name": "Welcome Pioneer",
+                "description": "Completed the onboarding process and joined the Base10 community.",
+                "icon": "🌟",
+                "earned_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return user
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"❌ Student onboarding failed: {e}")
+            raise e
+
+    async def complete_teacher_onboarding(self, user: User, data: dict) -> User:
+        """
+        Complete teacher onboarding by updating profile and creating first classroom
+        """
+        try:
+            user.bio = data.get("bio")
+            if data.get("subjects_taught"):
+                user.preferred_subjects = json.dumps(data.get("subjects_taught"))
+            
+            # Create first classroom
+            classroom = Classroom(
+                teacher_id=user.id,
+                name=data.get("first_classroom_name"),
+                subject=data.get("first_classroom_subject"),
+                grade_level=data.get("first_classroom_grade"),
+                join_code=self._generate_join_code()
+            )
+            
+            self.db.add(classroom)
+            
+            user.is_onboarded = True
+            user.onboarding_step = 3
+            
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Send classroom creation email
+            if user.email:
+                await self.send_classroom_created_email(user, classroom.name, classroom.join_code)
+            
+            logger.info(f"✅ Teacher onboarding completed for {user.email or user.phone_number}")
+            
+            # Award "Founding Educator" badge
+            self._award_badge(user, {
+                "id": "founding_educator",
+                "name": "Founding Educator",
+                "description": "Created your first classroom and started your teaching journey on Base10.",
+                "icon": "🎓",
+                "earned_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return user
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"❌ Teacher onboarding failed: {e}")
+            raise e
+
+    def _generate_join_code(self) -> str:
+        """Generate a unique 6-character join code."""
+        import string
+        import random
+        chars = string.ascii_uppercase + string.digits
+        while True:
+            code = ''.join(random.choice(chars) for _ in range(6))
+            # Check if code exists
+            exists = self.db.query(Classroom).filter(Classroom.join_code == code).first()
+            if not exists:
+                return code
+
+    def _award_badge(self, user: User, badge_data: dict):
+        """Award a badge to a user."""
+        try:
+            badges = []
+            if user.achievement_badges:
+                badges = json.loads(user.achievement_badges)
+            
+            # Check if badge already exists
+            if not any(b.get("id") == badge_data["id"] for b in badges):
+                badges.append(badge_data)
+                user.achievement_badges = json.dumps(badges)
+                # Also give some points
+                user.total_points = (user.total_points or 0) + 50
+                self.db.commit()
+                logger.info(f"Awarded badge {badge_data['id']} to user {user.id}")
+        except Exception as e:
+            logger.error(f"Failed to award badge: {e}")

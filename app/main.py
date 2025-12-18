@@ -25,7 +25,8 @@ from app.api.v1 import (
     assets,
     billing,
     classrooms,
-    ai_teacher
+    ai_teacher,
+    onboarding
 )
 
 
@@ -88,6 +89,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(recovery.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(profile.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(onboarding.router, prefix="/api/v1/onboarding", tags=["Onboarding"])
 
 # Content & Learning
 app.include_router(questions.router, prefix="/api/v1/questions", tags=["Questions"])
