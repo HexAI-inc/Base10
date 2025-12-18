@@ -1,8 +1,9 @@
 """User model for authentication and progress tracking."""
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base import Base
+from app.models.enums import UserRole, GradeLevel
 
 
 class User(Base):
@@ -38,10 +39,10 @@ class User(Base):
     verification_token_expires = Column(DateTime(timezone=True), nullable=True)  # Token expiration (24 hours)
     
     # User role for onboarding flows
-    role = Column(String(50), nullable=True, default="student")  # "student", "teacher", "admin"
+    role = Column(SQLEnum(UserRole), nullable=True, default=UserRole.STUDENT)
     
     # User profile & preferences (NEW: for content filtering)
-    education_level = Column(String(50), nullable=True)  # "JSS1", "JSS3", "WASSCE", "GABECE"
+    education_level = Column(SQLEnum(GradeLevel), nullable=True)  # "JSS1", "JSS3", "WASSCE", "GABECE"
     target_exam_date = Column(DateTime(timezone=True), nullable=True)  # When they're taking the exam
     preferred_subjects = Column(String(500), nullable=True)  # JSON array: ["Mathematics", "Physics"]
     

@@ -1,7 +1,8 @@
 """OTP (One-Time Password) model for account recovery."""
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, func, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.db.base import Base
+from app.models.enums import OTPType
 from datetime import datetime, timedelta
 
 
@@ -22,7 +23,7 @@ class OTP(Base):
     
     # OTP Details
     code = Column(String(4), nullable=False)  # 4-digit code
-    purpose = Column(String(20), nullable=False)  # "password_reset" or "phone_verify"
+    purpose = Column(SQLEnum(OTPType), nullable=False)  # "password_reset" or "phone_verify"
     
     # Security
     is_used = Column(Boolean, default=False)

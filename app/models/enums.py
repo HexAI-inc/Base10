@@ -17,6 +17,43 @@ class Subject(str, enum.Enum):
     COMMERCE = "Commerce"
     LITERATURE_IN_ENGLISH = "Literature in English"
 
+class UserRole(str, enum.Enum):
+    """Platform user roles."""
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+
+class AssetType(str, enum.Enum):
+    """Types of media assets."""
+    IMAGE = "image"
+    PDF = "pdf"
+    VIDEO = "video"
+    AUDIO = "audio"
+    DOCUMENT = "document"
+    OTHER = "other"
+
+class OTPType(str, enum.Enum):
+    """Purpose of an OTP."""
+    PASSWORD_RESET = "password_reset"
+    PHONE_VERIFY = "phone_verify"
+    EMAIL_VERIFY = "email_verify"
+    LOGIN = "login"
+
+class QuestionType(str, enum.Enum):
+    """Types of questions."""
+    MULTIPLE_CHOICE = "multiple_choice"
+    TRUE_FALSE = "true_false"
+    SHORT_ANSWER = "short_answer"
+    ESSAY = "essay"
+
+class NotificationType(str, enum.Enum):
+    """Types of notifications."""
+    SMS = "sms"
+    EMAIL = "email"
+    PUSH = "push"
+    IN_APP = "in_app"
+
 class DifficultyLevel(str, enum.Enum):
     """Question difficulty levels."""
     EASY = "easy"

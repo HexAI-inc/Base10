@@ -5,18 +5,12 @@ from datetime import datetime
 from enum import Enum
 from app.models.enums import (
     Subject, DifficultyLevel, GradeLevel, AssignmentType, 
-    AssignmentStatus, PostType, Topic, ReportStatus
+    AssignmentStatus, PostType, Topic, ReportStatus, UserRole,
+    AssetType, OTPType, QuestionType, NotificationType
 )
 
 
 # ============= User Schemas =============
-
-class UserRole(str, Enum):
-    """Valid user roles."""
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
-
 
 class UserBase(BaseModel):
     """Base user schema."""
@@ -80,7 +74,7 @@ class UserResponse(UserBase):
     is_verified: bool
     is_onboarded: bool
     onboarding_step: int
-    role: str
+    role: UserRole
     ai_quota_limit: int
     ai_quota_used: int
     created_at: datetime
