@@ -75,6 +75,17 @@ class Token(BaseModel):
     user: UserResponse
 
 
+class DashboardStats(BaseModel):
+    """User dashboard statistics."""
+    total_attempts: int
+    overall_accuracy: float
+    streak_days: int
+    study_time_hours: float
+    due_reviews: int
+    today_attempts: int
+    has_target_exam: bool
+
+
 # ============= Question Schemas =============
 
 class DifficultyEnum(str, Enum):

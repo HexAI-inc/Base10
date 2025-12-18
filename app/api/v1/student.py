@@ -13,6 +13,7 @@ from app.models.question import Question, Subject, DifficultyLevel
 from app.models.progress import Attempt
 from app.models.classroom import Classroom, classroom_students
 from app.api.v1.auth import get_current_user
+from app.schemas.schemas import DashboardStats
 
 router = APIRouter()
 
@@ -584,7 +585,7 @@ def get_student_dashboard(
     }
 
 
-@router.get("/dashboard/summary")
+@router.get("/dashboard/summary", response_model=DashboardStats)
 def get_dashboard_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -625,10 +626,17 @@ def get_dashboard_summary(
         )
     ).scalar() or 0
     
+    # Get total study time
+    total_ms = db.query(func.sum(Attempt.time_taken_ms)).filter(
+        Attempt.user_id == current_user.id
+    ).scalar() or 0
+    study_time_hours = round(total_ms / (1000 * 60 * 60), 1)
+    
     return {
         'total_attempts': total,
         'overall_accuracy': round(accuracy, 2),
         'streak_days': streak,
+        'study_time_hours': study_time_hours,
         'due_reviews': due_reviews,
         'today_attempts': today_attempts,
         'has_target_exam': current_user.target_exam_date is not None
