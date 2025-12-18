@@ -13,7 +13,8 @@ from app.models.question import Question, Subject, DifficultyLevel
 from app.models.progress import Attempt
 from app.models.classroom import Classroom, classroom_students
 from app.api.v1.auth import get_current_user
-from app.schemas.schemas import DashboardStats
+from app.schemas.schemas import DashboardStats, UserStats, SubjectStats
+from app.services.ai_service import generate_ai_recommendations
 
 router = APIRouter()
 
@@ -127,6 +128,49 @@ def _calculate_topic_mastery(db: Session, user_id: int) -> List[Dict]:
     return mastery_data
 
 
+def _calculate_subject_mastery(db: Session, user_id: int) -> List[Dict]:
+    """Calculate mastery level for each subject."""
+    subject_stats = db.query(
+        Question.subject,
+        func.count(Attempt.id).label('attempts'),
+        func.sum(case((Attempt.is_correct == True, 1), else_=0)).label('correct')
+    ).join(
+        Attempt, Attempt.question_id == Question.id
+    ).filter(
+        Attempt.user_id == user_id
+    ).group_by(
+        Question.subject
+    ).all()
+    
+    subject_data = []
+    for subject, attempts, correct in subject_stats:
+        correct = correct or 0
+        accuracy = (correct / attempts * 100) if attempts > 0 else 0
+        mastery_level = _calculate_mastery_level(accuracy)
+        
+        # Get top 3 topics for this subject
+        top_topics = db.query(Question.topic).join(
+            Attempt, Attempt.question_id == Question.id
+        ).filter(
+            and_(Attempt.user_id == user_id, Question.subject == subject)
+        ).group_by(
+            Question.topic
+        ).order_by(
+            func.sum(case((Attempt.is_correct == True, 1), else_=0)) / func.count(Attempt.id).desc()
+        ).limit(3).all()
+        
+        subject_data.append({
+            'subject': subject.value,
+            'total_attempts': attempts,
+            'correct_attempts': correct,
+            'accuracy': round(accuracy, 2),
+            'mastery_level': mastery_level.value,
+            'top_topics': [t[0] for t in top_topics]
+        })
+    
+    return subject_data
+
+
 def _calculate_exam_readiness(db: Session, user_id: int, current_user: User) -> Dict:
     """Calculate exam readiness score and breakdown."""
     # Get overall stats
@@ -226,13 +270,27 @@ def _calculate_exam_readiness(db: Session, user_id: int, current_user: User) -> 
     }
 
 
-def _generate_study_recommendations(
+async def _generate_study_recommendations(
     db: Session, 
     user_id: int, 
     topic_mastery: List[Dict],
     exam_readiness: Dict
 ) -> List[Dict]:
     """Generate personalized study recommendations."""
+    # Try AI recommendations first
+    performance_summary = {
+        "weak_topics": [t['topic'] for t in topic_mastery if t['accuracy'] < 70][:5],
+        "strong_topics": [t['topic'] for t in topic_mastery if t['accuracy'] >= 80][:5],
+        "exam_readiness_score": exam_readiness.get('readiness_score', 0),
+        "days_until_exam": exam_readiness.get('days_until_exam'),
+        "overall_accuracy": exam_readiness.get('factors', {}).get('overall_accuracy', 0)
+    }
+    
+    ai_recs = await generate_ai_recommendations(performance_summary)
+    if ai_recs:
+        return ai_recs
+
+    # Fallback to rule-based recommendations if AI fails
     recommendations = []
     
     # 1. Focus on weak topics
@@ -477,7 +535,7 @@ def _get_classmate_comparison(db: Session, user_id: int) -> Optional[Dict]:
 
 
 @router.get("/dashboard")
-def get_student_dashboard(
+async def get_student_dashboard(
     time_range: TimeRange = Query(default=TimeRange.WEEKLY, description="Time range for trends"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -548,12 +606,13 @@ def get_student_dashboard(
     # Calculate all analytics
     performance_trends = _calculate_performance_trends(db, current_user.id)
     topic_mastery = _calculate_topic_mastery(db, current_user.id)
+    subject_mastery = _calculate_subject_mastery(db, current_user.id)
     exam_readiness = _calculate_exam_readiness(db, current_user.id, current_user)
     time_analytics = _calculate_time_analytics(db, current_user.id)
     classmate_comparison = _get_classmate_comparison(db, current_user.id)
     
     # Generate personalized recommendations
-    recommendations = _generate_study_recommendations(
+    recommendations = await _generate_study_recommendations(
         db, 
         current_user.id, 
         topic_mastery,
@@ -577,6 +636,7 @@ def get_student_dashboard(
         'overview': overview,
         'performance_trends': performance_trends,
         'topic_mastery': topic_mastery,
+        'subject_mastery': subject_mastery,
         'exam_readiness': exam_readiness,
         'recommendations': recommendations,
         'time_analytics': time_analytics,
@@ -641,3 +701,15 @@ def get_dashboard_summary(
         'today_attempts': today_attempts,
         'has_target_exam': current_user.target_exam_date is not None
     }
+
+
+@router.get("/subjects", response_model=List[SubjectStats])
+def get_student_subject_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get subject-wise performance statistics for the current student.
+    Includes accuracy, total attempts, and mastery level for each subject.
+    """
+    return _calculate_subject_mastery(db, current_user.id)

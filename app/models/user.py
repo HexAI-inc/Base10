@@ -64,6 +64,10 @@ class User(Base):
     total_points = Column(Integer, default=0)  # Total gamification points
     level = Column(Integer, default=1)  # User level based on points
     
+    # AI Quota Management
+    ai_quota_limit = Column(Integer, default=100)  # Default 100 requests per month/period
+    ai_quota_used = Column(Integer, default=0)  # Total requests used
+    
     # Engagement tracking
     has_app_installed = Column(Boolean, default=False)  # For smart notification routing
     study_streak = Column(Integer, default=0)  # Consecutive days with activity

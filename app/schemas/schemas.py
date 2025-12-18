@@ -1,6 +1,6 @@
 """Pydantic schemas for data validation and serialization."""
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -62,6 +62,8 @@ class UserResponse(UserBase):
     is_active: bool
     is_verified: bool
     role: str
+    ai_quota_limit: int
+    ai_quota_used: int
     created_at: datetime
     
     class Config:
@@ -215,13 +217,62 @@ class SyncPullResponse(BaseModel):
     new_grades: Optional[List[dict]] = None
 
 
+# ============= Marketing Schemas =============
+
+class WaitlistCreate(BaseModel):
+    """Schema for joining the waitlist."""
+    full_name: str = Field(..., min_length=2, max_length=100)
+    phone_number: str = Field(..., description="Phone number with country code")
+    email: Optional[EmailStr] = None
+    school_name: Optional[str] = None
+    education_level: Optional[str] = None
+    location: Optional[str] = None
+    device_type: Optional[str] = None
+    referral_source: Optional[str] = None
+
+
+class WaitlistLeadResponse(WaitlistCreate):
+    """Schema for waitlist lead data in responses."""
+    id: int
+    is_converted: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MarketingStats(BaseModel):
+    """Schema for marketing analytics."""
+    total_leads: int
+    device_breakdown: Dict[str, str]
+    top_schools: List[Dict[str, Any]]
+    conversion_rate: float
+
+
+class BroadcastRequest(BaseModel):
+    """Schema for sending broadcast SMS."""
+    message: str = Field(..., min_length=10, max_length=160)
+    filter_location: Optional[str] = None
+    filter_device: Optional[str] = None
+
+
 # ============= Statistics Schemas =============
+
+class SubjectStats(BaseModel):
+    """Statistics for a specific subject."""
+    subject: str
+    total_attempts: int
+    correct_attempts: int
+    accuracy: float
+    mastery_level: str
+    top_topics: List[str]
+
 
 class UserStats(BaseModel):
     """User progress statistics."""
     total_attempts: int
     correct_attempts: int
     accuracy: float
-    subjects_breakdown: dict  # {"Mathematics": {"attempts": 50, "correct": 35}}
+    subjects_breakdown: List[SubjectStats]
     weak_topics: List[str]
     streak_days: int

@@ -8,6 +8,8 @@ import json
 import logging
 from typing import List, Tuple, Optional, Dict, Any
 from app.core.config import settings
+from sqlalchemy.orm import Session
+from app.models.user import User
 from app.models.question import Question
 from app.api.v1.ai import ChatMessage
 
@@ -409,28 +411,102 @@ Make questions relevant to WAEC exam format and West African curriculum."""
         raise Exception(f"Quiz generation failed: {str(e)}")
 
 
-def check_ai_quota(user_id: int) -> bool:
+async def generate_ai_recommendations(
+    performance_data: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    Generate personalized study recommendations using AI.
+    
+    Args:
+        performance_data: Dictionary containing student performance metrics
+        
+    Returns:
+        List of recommendation objects
+    """
+    if not GEMINI_AVAILABLE or not model:
+        return []
+
+    prompt = f"""
+    As an expert WAEC tutor, analyze this student's performance data and provide 3-4 highly personalized study recommendations.
+    
+    Student Performance Data:
+    {json.dumps(performance_data, indent=2)}
+    
+    For each recommendation, provide:
+    1. A catchy title
+    2. A supportive and actionable message (max 150 chars)
+    3. Priority (high, medium, low)
+    4. Type (weak_topics, consistency, exam_readiness, coverage)
+    5. Action (e.g., "practice_topics", "start_review", "take_quiz")
+    
+    Format your response as a JSON array of objects:
+    [
+        {{
+            "title": "Title",
+            "message": "Actionable advice...",
+            "priority": "high",
+            "type": "weak_topics",
+            "action": "practice_topics",
+            "data": {{}}
+        }}
+    ]
+    
+    Keep the tone encouraging and focused on West African curriculum (WAEC/WASSCE).
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Clean JSON response
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+        
+        recommendations = json.loads(response_text)
+        return recommendations
+    except Exception as e:
+        logger.error(f"AI recommendation generation failed: {e}")
+        return []
+
+
+def check_ai_quota(db: Session, user_id: int) -> bool:
     """
     Check if user has remaining AI quota.
-    
-    Args:
-        user_id: User ID to check
-    
-    Returns:
-        True if user can make AI requests, False otherwise
     """
-    # TODO: Implement quota tracking in database
-    # For now, always return True
-    return True
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    
+    # If limit is -1, it's unlimited
+    if user.ai_quota_limit == -1:
+        return True
+        
+    return user.ai_quota_used < user.ai_quota_limit
 
 
-def increment_ai_usage(user_id: int, request_type: str = "explanation"):
+def increment_ai_usage(db: Session, user_id: int, request_type: str = "explanation"):
     """
     Track AI usage for quota management.
-    
-    Args:
-        user_id: User ID
-        request_type: Type of request ("explanation" or "chat")
     """
-    # TODO: Implement usage tracking in database
-    pass
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.ai_quota_used += 1
+        db.commit()
+
+
+def get_ai_quota_status(db: Session, user_id: int) -> Dict[str, Any]:
+    """
+    Get the current quota status for a user.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return {"limit": 0, "used": 0, "remaining": 0}
+        
+    remaining = max(0, user.ai_quota_limit - user.ai_quota_used) if user.ai_quota_limit != -1 else 9999
+    
+    return {
+        "limit": user.ai_quota_limit,
+        "used": user.ai_quota_used,
+        "remaining": remaining,
+        "is_unlimited": user.ai_quota_limit == -1
+    }

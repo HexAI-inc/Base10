@@ -8,8 +8,10 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.otp import OTP
 from app.core.security import get_password_hash
+from app.services.comms_service import CommunicationService, MessageType, MessagePriority
 
 router = APIRouter()
+comms = CommunicationService()
 
 
 # Request schemas
@@ -69,11 +71,17 @@ async def forgot_password(
     db.add(otp)
     db.commit()
     
-    # TODO: Send SMS/Email via notification service
-    # For now, return code in response (REMOVE IN PRODUCTION!)
-    # In production, this should trigger:
-    # - SMS via Twilio if phone_number
-    # - Email if email
+    # Trigger notification via Comms Service
+    comms.send_notification(
+        user_id=user.id,
+        message_type=MessageType.PASSWORD_RESET,
+        priority=MessagePriority.CRITICAL,
+        title="Base10 Password Reset",
+        body=f"Your Base10 verification code is: {otp_code}. Valid for 15 minutes.",
+        user_phone=user.phone_number,
+        user_email=user.email,
+        has_app_installed=False # Force SMS/Email for recovery
+    )
     
     return {
         "message": "If that account exists, we've sent a reset code",

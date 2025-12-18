@@ -8,6 +8,7 @@ from app.models.report import QuestionReport, ReportReason
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
 from app.models.classroom import Classroom, Assignment
 from app.models.student_profile import StudentProfile, TeacherMessage
+from app.models.marketing import WaitlistLead
 
 # Export all models for alembic autogenerate
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "Assignment",
     "StudentProfile",
     "TeacherMessage",
+    "WaitlistLead",
 ]

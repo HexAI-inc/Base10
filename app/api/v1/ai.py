@@ -2,15 +2,24 @@
 AI endpoints for intelligent tutoring.
 Provides server-side AI explanations and chat using Gemini when online.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy import func, and_, case
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
 
 from app.db.session import get_db
 from app.models.user import User
 from app.models.question import Question
+from app.models.progress import Attempt
 from app.api.v1.auth import get_current_user
+from app.services.ai_service import (
+    generate_ai_recommendations,
+    check_ai_quota,
+    increment_ai_usage,
+    get_ai_quota_status
+)
 
 
 router = APIRouter()
@@ -91,6 +100,13 @@ async def explain_answer(
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     
+    # Check Quota
+    if not check_ai_quota(db, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AI quota exceeded. Please wait for reset or upgrade."
+        )
+    
     # Check if student's answer is correct (shouldn't request explanation for correct answers)
     if request.student_answer == question.correct_index:
         return ExplainResponse(
@@ -118,6 +134,9 @@ async def explain_answer(
     except Exception as e:
         # Fallback on any error
         explanation_text = f"The correct answer is option {chr(65 + question.correct_index)}. {question.explanation or 'Review this topic for better understanding.'}"
+    
+    # Increment usage
+    increment_ai_usage(db, current_user.id, "explanation")
     
     return ExplainResponse(
         explanation=explanation_text,
@@ -164,6 +183,13 @@ async def chat_tutor(
     }
     ```
     """
+    # Check Quota
+    if not check_ai_quota(db, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AI quota exceeded. Please wait for reset or upgrade."
+        )
+
     # Check if AI service is available
     try:
         from app.services.ai_service import chat_with_ai
@@ -189,6 +215,9 @@ async def chat_tutor(
         if request.subject:
             # Could query database for related topics in the same subject
             related_topics = _get_related_topics(db, request.subject, request.topic)
+        
+        # Increment usage
+        increment_ai_usage(db, current_user.id, "chat")
         
         return ChatResponse(
             response=response_text,
@@ -229,34 +258,34 @@ def _get_related_topics(db: Session, subject: str, current_topic: Optional[str])
 
 
 @router.get("/status")
-async def ai_status(current_user: User = Depends(get_current_user)):
+async def ai_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
     Check AI service availability and user's remaining quota.
-    
-    **Returns**:
-    - `available`: Whether AI services are currently operational
-    - `quota_remaining`: How many AI requests the user has left (for free tier)
-    - `features`: Which AI features are available to this user
     """
     # Check if services are available
     try:
-        from app.services.ai_service import generate_explanation, chat_with_ai, generate_quiz
-        services_available = True
+        from app.services.ai_service import GEMINI_AVAILABLE
+        services_available = GEMINI_AVAILABLE
     except ImportError:
         services_available = False
     
-    # In production, check actual service health
-    # For now, return based on import success
+    # Get real quota status
+    quota = get_ai_quota_status(db, current_user.id)
     
     return {
         "available": services_available,
-        "quota_remaining": 100,  # Could track in database per user
+        "quota_remaining": quota["remaining"],
+        "quota_used": quota["used"],
+        "quota_limit": quota["limit"],
         "features": {
             "explain": True,
             "chat": services_available,
             "quiz_generation": services_available,
             "socratic_mode": services_available,
-            "premium": False  # Could check subscription status
+            "premium": False
         },
         "message": "AI services ready" if services_available else "AI services not configured"
     }
@@ -311,6 +340,13 @@ async def generate_ai_quiz(
     }
     ```
     """
+    # Check Quota
+    if not check_ai_quota(db, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AI quota exceeded. Please wait for reset or upgrade."
+        )
+
     try:
         from app.services.ai_service import generate_quiz
     except ImportError:
@@ -327,6 +363,9 @@ async def generate_ai_quiz(
             num_questions=num_questions
         )
         
+        # Increment usage
+        increment_ai_usage(db, current_user.id, "quiz")
+        
         return quiz_data
     
     except Exception as e:
@@ -334,3 +373,76 @@ async def generate_ai_quiz(
             status_code=500,
             detail=f"Failed to generate quiz: {str(e)}"
         )
+
+
+@router.get("/recommendations")
+async def get_ai_recommendations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get personalized AI-generated study recommendations.
+    
+    Analyzes student's recent performance, weak topics, and exam readiness
+    to provide actionable advice.
+    """
+    # 1. Gather performance data
+    # Weak topics (accuracy < 70%)
+    topic_stats = db.query(
+        Question.topic,
+        func.count(Attempt.id).label('attempts'),
+        func.sum(case((Attempt.is_correct == True, 1), else_=0)).label('correct')
+    ).join(
+        Attempt, Attempt.question_id == Question.id
+    ).filter(
+        Attempt.user_id == current_user.id
+    ).group_by(
+        Question.topic
+    ).all()
+    
+    weak_topics = []
+    strong_topics = []
+    for topic, attempts, correct in topic_stats:
+        accuracy = (correct / attempts * 100) if attempts > 0 else 0
+        if accuracy < 70:
+            weak_topics.append(topic)
+        elif accuracy >= 85:
+            strong_topics.append(topic)
+            
+    # Overall stats
+    stats = db.query(
+        func.count(Attempt.id).label('total'),
+        func.sum(case((Attempt.is_correct == True, 1), else_=0)).label('correct')
+    ).filter(
+        Attempt.user_id == current_user.id
+    ).first()
+    
+    total = stats.total or 0
+    correct = stats.correct or 0
+    accuracy = (correct / total * 100) if total > 0 else 0
+    
+    performance_summary = {
+        "weak_topics": weak_topics[:5],
+        "strong_topics": strong_topics[:5],
+        "overall_accuracy": round(accuracy, 2),
+        "total_attempts": total,
+        "days_until_exam": (current_user.target_exam_date - datetime.utcnow()).days if current_user.target_exam_date else None
+    }
+    
+    # 2. Generate AI recommendations
+    recommendations = await generate_ai_recommendations(performance_summary)
+    
+    if not recommendations:
+        # Fallback
+        return [
+            {
+                "title": "Keep Practicing!",
+                "message": "Continue answering questions to get personalized AI recommendations.",
+                "priority": "medium",
+                "type": "coverage",
+                "action": "practice_topics",
+                "data": {}
+            }
+        ]
+        
+    return recommendations
