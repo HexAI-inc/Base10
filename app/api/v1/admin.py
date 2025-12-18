@@ -797,6 +797,49 @@ async def deactivate_user(
     db.commit()
     
     # TODO: Log the action with reason in an audit log
+    return {"status": "success", "message": f"User {user_id} deactivated", "reason": reason}
+
+
+@router.put("/users/{user_id}")
+async def update_user_details(
+    user_id: int,
+    data: schemas.UserUpdateAdmin,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """
+    Update user details (Admin only).
+    
+    Allows changing role, status, points, and profile info.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = data.dict(exclude_unset=True)
+    
+    for key, value in update_data.items():
+        setattr(user, key, value)
+    
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "status": "success",
+        "message": f"User {user_id} updated",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "is_active": user.is_active,
+            "total_points": user.total_points
+        }
+    }
+
+
+@router.put("/users/{user_id}/activate")
     
     return {
         "message": "User deactivated successfully",

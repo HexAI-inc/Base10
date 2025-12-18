@@ -50,6 +50,19 @@ class UserCreate(UserBase):
         return v
 
 
+class UserUpdateAdmin(BaseModel):
+    """Schema for admin to update user details."""
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    total_points: Optional[int] = None
+    level: Optional[int] = None
+    study_streak: Optional[int] = None
+
+
 class UserLogin(BaseModel):
     """Schema for login (phone or email)."""
     identifier: str  # Can be phone or email
@@ -118,6 +131,32 @@ class OnboardingStatusResponse(BaseModel):
     role: str
 
 
+# ============= Asset Schemas =============
+
+class AssetBase(BaseModel):
+    """Base asset schema."""
+    filename: str
+    url: str
+    asset_type: str
+    mime_type: Optional[str] = None
+    file_size: Optional[int] = None
+    ai_metadata: Optional[Dict[str, Any]] = None
+
+
+class AssetCreate(AssetBase):
+    """Schema for creating assets."""
+    uploaded_by_id: Optional[int] = None
+
+
+class AssetResponse(AssetBase):
+    """Schema for asset responses."""
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
 # ============= Question Schemas =============
 
 class DifficultyEnum(str, Enum):
@@ -146,6 +185,7 @@ class QuestionBase(BaseModel):
     explanation: Optional[str] = None
     exam_year: Optional[str] = None
     difficulty: DifficultyEnum = DifficultyEnum.MEDIUM
+    asset_id: Optional[int] = None
 
 
 class QuestionCreate(QuestionBase):
@@ -156,6 +196,7 @@ class QuestionCreate(QuestionBase):
 class QuestionResponse(QuestionBase):
     """Schema for question responses."""
     id: int
+    asset: Optional[AssetResponse] = None
     
     class Config:
         from_attributes = True
