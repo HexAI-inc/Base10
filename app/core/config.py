@@ -45,12 +45,12 @@ class Settings(BaseSettings):
     
     # Storage & CDN
     STORAGE_BACKEND: str = "s3"  # 's3', 'minio', or 'local'
-    S3_BUCKET_NAME: str = "base10-storage-bucket"
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "lon1"
-    S3_ENDPOINT_URL: str = "https://lon1.digitaloceanspaces.com"  # DigitalOcean Spaces Endpoint
-    S3_CDN_DOMAIN: str = "base10-storage-bucket.lon1.cdn.digitaloceanspaces.com"  # CDN Endpoint
+    SPACES_BUCKET_NAME: str = ""
+    SPACES_ACCESS_KEY_ID: str = ""
+    SPACES_SECRET_ACCESS_KEY: str = ""
+    SPACES_REGION: str = "lon1"
+    SPACES_ENDPOINT_URL: str = ""  # e.g., https://lon1.digitaloceanspaces.com
+    SPACES_CDN_DOMAIN: str = ""    # e.g., base10-storage-bucket.lon1.cdn.digitaloceanspaces.com
     LOCAL_STORAGE_PATH: str = "./media"
     
     # Cloudinary (Image Optimization)

@@ -63,7 +63,7 @@ class StorageService:
     Cloud storage manager for Base10 media assets.
     
     Supports:
-    - AWS S3 (production)
+    - DigitalOcean Spaces (production)
     - MinIO (self-hosted alternative)
     - Local filesystem (development)
     """
@@ -74,12 +74,12 @@ class StorageService:
         if self.storage_backend in ['s3', 'minio'] and HAS_S3:
             self.s3_client = boto3.client(
                 's3',
-                endpoint_url=settings.S3_ENDPOINT_URL if self.storage_backend == 'minio' else None,
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION
+                endpoint_url=settings.SPACES_ENDPOINT_URL,
+                aws_access_key_id=settings.SPACES_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.SPACES_SECRET_ACCESS_KEY,
+                region_name=settings.SPACES_REGION
             )
-            self.bucket_name = settings.S3_BUCKET_NAME
+            self.bucket_name = settings.SPACES_BUCKET_NAME
         else:
             self.s3_client = None
             self.local_storage_path = Path(settings.LOCAL_STORAGE_PATH or './media')
@@ -192,10 +192,11 @@ class StorageService:
     
     
     def _upload_to_s3(self, file: BinaryIO, path: str, metadata: Optional[dict]) -> str:
-        """Upload to AWS S3 or MinIO."""
+        """Upload to DigitalOcean Spaces or S3-compatible storage."""
         extra_args = {
             'ContentType': self._guess_content_type(path),
             'CacheControl': 'public, max-age=31536000',  # Cache for 1 year
+            'ACL': 'public-read'  # Ensure file is publicly accessible
         }
         
         if metadata:
@@ -209,13 +210,11 @@ class StorageService:
         )
         
         # Return public URL
-        if settings.S3_CDN_DOMAIN:
-            return f"https://{settings.S3_CDN_DOMAIN}/{path}"
-        elif "digitaloceanspaces.com" in settings.S3_ENDPOINT_URL:
-            # DigitalOcean Spaces public URL format
-            return f"https://{self.bucket_name}.{settings.AWS_REGION}.digitaloceanspaces.com/{path}"
-        else:
-            return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{path}"
+        if settings.SPACES_CDN_DOMAIN:
+            return f"https://{settings.SPACES_CDN_DOMAIN}/{path}"
+        
+        # Fallback to direct Spaces URL if CDN is not configured
+        return f"https://{self.bucket_name}.{settings.SPACES_REGION}.digitaloceanspaces.com/{path}"
     
     
     def _upload_to_local(self, file: BinaryIO, path: str) -> str:
