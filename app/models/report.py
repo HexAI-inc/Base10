@@ -2,20 +2,11 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, func, Boolean
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-import enum
-
-
-class ReportReason(str, enum.Enum):
-    """Predefined report reasons for consistency."""
-    WRONG_ANSWER = "Wrong Answer"
-    TYPO = "Typo"
-    UNCLEAR_QUESTION = "Unclear Question"
-    MISSING_DIAGRAM = "Missing Diagram"
-    OUTDATED_CONTENT = "Outdated Content"
-    OTHER = "Other"
+from app.models.enums import ReportStatus, ReportReason
 
 
 class QuestionReport(Base):
+
     """
     User-submitted reports for question quality issues.
     
@@ -37,7 +28,7 @@ class QuestionReport(Base):
     comment = Column(Text, nullable=True)  # Optional explanation
     
     # Admin moderation
-    status = Column(String(20), default="pending")  # pending, reviewed, fixed, dismissed
+    status = Column(SQLEnum(ReportStatus), default=ReportStatus.PENDING)
     admin_notes = Column(Text, nullable=True)
     reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)

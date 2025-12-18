@@ -1,7 +1,8 @@
 """Flashcard model for spaced repetition learning."""
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, func, Index, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, func, Index, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.db.base import Base
+from app.models.enums import Subject, DifficultyLevel
 
 
 class FlashcardDeck(Base):
@@ -20,8 +21,8 @@ class FlashcardDeck(Base):
     # Deck info
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    subject = Column(String(50), nullable=False, index=True)
-    difficulty = Column(String(20), nullable=False)  # easy, medium, hard
+    subject = Column(SQLEnum(Subject), nullable=False, index=True)
+    difficulty = Column(SQLEnum(DifficultyLevel), nullable=False)  # easy, medium, hard
     
     # Content
     card_count = Column(Integer, default=0)
@@ -55,6 +56,7 @@ class Flashcard(Base):
     front = Column(Text, nullable=False)  # Question/Prompt
     back = Column(Text, nullable=False)   # Answer
     image_url = Column(String(500), nullable=True)
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
     
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -64,6 +66,7 @@ class Flashcard(Base):
     # Relationships
     deck = relationship("FlashcardDeck", back_populates="cards")
     reviews = relationship("FlashcardReview", back_populates="card")
+    asset = relationship("Asset", back_populates="flashcards")
     
     def __repr__(self):
         return f"<Card {self.id}: {self.front[:30]}...>"

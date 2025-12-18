@@ -3,6 +3,10 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from app.models.enums import (
+    Subject, DifficultyLevel, GradeLevel, AssignmentType, 
+    AssignmentStatus, PostType, Topic, ReportStatus
+)
 
 
 # ============= User Schemas =============
@@ -107,8 +111,8 @@ class DashboardStats(BaseModel):
 
 class StudentOnboardingRequest(BaseModel):
     """Schema for student onboarding."""
-    education_level: str  # "JSS1", "JSS3", "WASSCE", "GABECE"
-    preferred_subjects: List[str]
+    education_level: GradeLevel  # Strict Enum
+    preferred_subjects: List[Subject]
     target_exam_date: Optional[datetime] = None
     learning_style: Optional[str] = None
     study_time_preference: Optional[str] = None
@@ -117,11 +121,11 @@ class StudentOnboardingRequest(BaseModel):
 class TeacherOnboardingRequest(BaseModel):
     """Schema for teacher onboarding."""
     bio: Optional[str] = None
-    subjects_taught: List[str]
+    subjects_taught: List[Subject]
     school_name: Optional[str] = None
     first_classroom_name: str
-    first_classroom_subject: str
-    first_classroom_grade: str
+    first_classroom_subject: Subject
+    first_classroom_grade: GradeLevel
 
 
 class OnboardingStatusResponse(BaseModel):
@@ -159,32 +163,16 @@ class AssetResponse(AssetBase):
 
 # ============= Question Schemas =============
 
-class DifficultyEnum(str, Enum):
-    """Question difficulty."""
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
-
-
-class SubjectEnum(str, Enum):
-    """WAEC subjects."""
-    MATHEMATICS = "Mathematics"
-    ENGLISH = "English Language"
-    PHYSICS = "Physics"
-    CHEMISTRY = "Chemistry"
-    BIOLOGY = "Biology"
-
-
 class QuestionBase(BaseModel):
     """Base question schema."""
-    subject: SubjectEnum
-    topic: str
+    subject: Subject
+    topic: Topic
     content: str
     options_json: str  # JSON string: '["A", "B", "C", "D"]'
     correct_index: int = Field(..., ge=0, le=3)
     explanation: Optional[str] = None
     exam_year: Optional[str] = None
-    difficulty: DifficultyEnum = DifficultyEnum.MEDIUM
+    difficulty: DifficultyLevel = DifficultyLevel.MEDIUM
     asset_id: Optional[int] = None
 
 
@@ -386,3 +374,49 @@ class ChatResponse(BaseModel):
     response: str = Field(..., description="AI tutor's helpful response")
     suggestions: List[str] = Field(default_factory=list, description="Follow-up question suggestions")
     related_topics: List[str] = Field(default_factory=list, description="Related topics to explore")
+
+
+# ============= Flashcard Schemas =============
+
+class FlashcardBase(BaseModel):
+    """Base flashcard schema."""
+    front: str
+    back: str
+    asset_id: Optional[int] = None
+
+
+class FlashcardCreate(FlashcardBase):
+    """Schema for creating flashcards."""
+    deck_id: int
+
+
+class FlashcardResponse(FlashcardBase):
+    """Schema for flashcard responses."""
+    id: int
+    asset: Optional[AssetResponse] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class FlashcardDeckBase(BaseModel):
+    """Base flashcard deck schema."""
+    name: str
+    description: Optional[str] = None
+    subject: Subject
+    difficulty: DifficultyLevel = DifficultyLevel.MEDIUM
+
+
+class FlashcardDeckCreate(FlashcardDeckBase):
+    """Schema for creating flashcard decks."""
+    pass
+
+
+class FlashcardDeckResponse(FlashcardDeckBase):
+    """Schema for flashcard deck responses."""
+    id: int
+    card_count: int
+    cards: List[FlashcardResponse] = []
+    
+    class Config:
+        from_attributes = True

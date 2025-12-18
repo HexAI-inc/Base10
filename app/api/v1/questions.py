@@ -7,8 +7,9 @@ import json
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.question import Question, Subject, DifficultyLevel
-from app.schemas.schemas import QuestionResponse, SubjectEnum, DifficultyEnum
+from app.models.question import Question
+from app.models.enums import Subject, DifficultyLevel, Topic
+from app.schemas.schemas import QuestionResponse
 from app.api.v1.auth import get_current_user
 
 router = APIRouter()
@@ -16,9 +17,9 @@ router = APIRouter()
 
 @router.get("/", response_model=List[QuestionResponse])
 def get_questions(
-    subject: Optional[SubjectEnum] = None,
-    topic: Optional[str] = None,
-    difficulty: Optional[DifficultyEnum] = None,
+    subject: Optional[Subject] = None,
+    topic: Optional[Topic] = None,
+    difficulty: Optional[DifficultyLevel] = None,
     limit: int = Query(default=50, le=200),
     skip: int = 0,
     db: Session = Depends(get_db),
@@ -38,7 +39,7 @@ def get_questions(
     if subject:
         query = query.filter(Question.subject == subject)
     if topic:
-        query = query.filter(Question.topic.ilike(f"%{topic}%"))
+        query = query.filter(Question.topic == topic)
     if difficulty:
         query = query.filter(Question.difficulty == difficulty)
     

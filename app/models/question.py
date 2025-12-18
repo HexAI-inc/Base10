@@ -1,29 +1,8 @@
 """Question model for WAEC practice questions."""
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, DateTime, func, Index
+from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, DateTime, func, Index, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-import enum
-
-
-class DifficultyLevel(str, enum.Enum):
-    """Question difficulty levels."""
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
-
-
-class Subject(str, enum.Enum):
-    """WAEC subjects."""
-    MATHEMATICS = "Mathematics"
-    ENGLISH = "English Language"
-    PHYSICS = "Physics"
-    CHEMISTRY = "Chemistry"
-    BIOLOGY = "Biology"
-    ECONOMICS = "Economics"
-    GEOGRAPHY = "Geography"
-    GOVERNMENT = "Government"
-    CIVIC_EDUCATION = "Civic Education"
-    FINANCIAL_ACCOUNTING = "Financial Accounting"
+from app.models.enums import Subject, DifficultyLevel, Topic
 
 
 class Question(Base):
@@ -42,7 +21,7 @@ class Question(Base):
     
     # Categorization (indexed for fast filtering)
     subject = Column(SQLEnum(Subject), index=True, nullable=False)
-    topic = Column(String, index=True, nullable=False)  # "Algebra", "Grammar", etc.
+    topic = Column(SQLEnum(Topic), index=True, nullable=False)  # Strict Enum for topics
     
     # Question content
     content = Column(Text, nullable=False)  # Supports LaTeX: $x^2 + 3x - 4 = 0$
@@ -54,6 +33,9 @@ class Question(Base):
     exam_year = Column(String, nullable=True)  # "WASSCE 2023"
     difficulty = Column(SQLEnum(DifficultyLevel), default=DifficultyLevel.MEDIUM)
     
+    # Media linking
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
+    
     # Delta Sync Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -62,6 +44,7 @@ class Question(Base):
     # Relationships
     attempts = relationship("Attempt", back_populates="question")
     reports = relationship("QuestionReport", back_populates="question")
+    asset = relationship("Asset", back_populates="questions")
     
     # Index for delta sync queries
     __table_args__ = (

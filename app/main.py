@@ -26,7 +26,8 @@ from app.api.v1 import (
     billing,
     classrooms,
     ai_teacher,
-    onboarding
+    onboarding,
+    moderation
 )
 
 
@@ -90,6 +91,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(recovery.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(profile.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(onboarding.router, prefix="/api/v1/onboarding", tags=["Onboarding"])
+app.include_router(moderation.router, prefix="/api/v1/moderation", tags=["Content Moderation"])
 
 # Content & Learning
 app.include_router(questions.router, prefix="/api/v1/questions", tags=["Questions"])

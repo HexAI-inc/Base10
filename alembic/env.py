@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.models import (
     Base, User, Question, Attempt, OTP, QuestionReport,
     FlashcardDeck, Flashcard, FlashcardReview,
-    Classroom, Assignment
+    Classroom, Assignment, ClassroomMaterial, Asset
 )
 
 # this is the Alembic Config object, which provides
@@ -83,7 +83,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            render_as_batch=True
         )
 
         with context.begin_transaction():

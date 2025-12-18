@@ -8,9 +8,11 @@ from pydantic import BaseModel, Field
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.classroom import Classroom, Assignment, classroom_students
-from app.models.progress import Attempt
-from app.models.question import Question
+from app.models.classroom import Classroom, Assignment, classroom_students, ClassroomMaterial
+from app.models.asset import Asset
+from app.services.storage import StorageService, AssetType
+from fastapi import UploadFile, File, Query
+from app.models.enums import Subject, Topic, DifficultyLevel, AssignmentType, AssignmentStatus, GradeLevel
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -22,6 +24,8 @@ class ClassroomCreate(BaseModel):
     """Schema for creating a classroom."""
     name: str = Field(..., min_length=3, max_length=100, description="Classroom name")
     description: Optional[str] = Field(None, max_length=500)
+    subject: Optional[Subject] = None
+    grade_level: Optional[GradeLevel] = None
 
 
 class ClassroomResponse(BaseModel):
@@ -32,6 +36,8 @@ class ClassroomResponse(BaseModel):
     join_code: str
     is_active: int
     student_count: int
+    subject: Optional[Subject] = None
+    grade_level: Optional[GradeLevel] = None
     created_at: datetime
     
     class Config:
@@ -48,9 +54,9 @@ class AssignmentCreate(BaseModel):
     classroom_id: int
     title: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = None
-    subject_filter: Optional[str] = None
-    topic_filter: Optional[str] = None
-    difficulty_filter: Optional[str] = None
+    subject_filter: Optional[Subject] = None
+    topic_filter: Optional[Topic] = None
+    difficulty_filter: Optional[DifficultyLevel] = None
     question_count: int = Field(default=10, ge=1, le=50)
     due_date: Optional[datetime] = None
 
@@ -61,8 +67,8 @@ class AssignmentResponse(BaseModel):
     classroom_id: int
     title: str
     description: Optional[str]
-    subject_filter: Optional[str]
-    topic_filter: Optional[str]
+    subject_filter: Optional[Subject] = None
+    topic_filter: Optional[Topic] = None
     question_count: int
     due_date: Optional[datetime]
     created_at: datetime
@@ -157,7 +163,112 @@ async def create_assignment(
     db.commit()
     db.refresh(assignment)
     
-    return assignment
+    return analytics
+
+
+# ============= Classroom Materials =============
+
+@router.post("/classrooms/{classroom_id}/materials")
+async def upload_classroom_material(
+    classroom_id: int,
+    title: str = Query(..., min_length=3),
+    description: Optional[str] = Query(None),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Upload study materials (PDFs, books, images) for a classroom.
+    
+    Only the classroom teacher can upload materials.
+    """
+    # Verify classroom ownership
+    classroom = db.query(Classroom).filter(
+        Classroom.id == classroom_id,
+        Classroom.teacher_id == current_user.id
+    ).first()
+    
+    if not classroom:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the classroom teacher can upload materials"
+        )
+    
+    # Determine asset type from filename/content_type
+    asset_type = "document"
+    if file.content_type.startswith("image/"):
+        asset_type = "image"
+    elif file.content_type == "application/pdf":
+        asset_type = "pdf"
+        
+    # Upload to storage
+    storage_service = StorageService()
+    url = storage_service.upload_image(
+        file.file,
+        AssetType.QUESTION_DIAGRAM, # Reusing enum for now or add MATERIAL type
+        file.filename,
+        user_id=current_user.id
+    )
+    
+    # Create central asset record
+    asset = Asset(
+        filename=file.filename,
+        url=url,
+        asset_type=asset_type,
+        mime_type=file.content_type,
+        uploaded_by_id=current_user.id
+    )
+    db.add(asset)
+    db.flush() # Get asset ID
+    
+    # Create classroom material record
+    material = ClassroomMaterial(
+        classroom_id=classroom_id,
+        uploaded_by_id=current_user.id,
+        asset_id=asset.id,
+        title=title,
+        description=description,
+        url=url
+    )
+    db.add(material)
+    db.commit()
+    
+    return {
+        "message": "Material uploaded successfully",
+        "material_id": material.id,
+        "asset_id": asset.id,
+        "url": url
+    }
+
+@router.get("/classrooms/{classroom_id}/materials")
+async def get_classroom_materials(
+    classroom_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all materials for a classroom."""
+    # Verify membership (teacher or student)
+    is_teacher = db.query(Classroom).filter(
+        Classroom.id == classroom_id,
+        Classroom.teacher_id == current_user.id
+    ).first()
+    
+    is_student = db.query(classroom_students).filter(
+        classroom_students.c.classroom_id == classroom_id,
+        classroom_students.c.student_id == current_user.id
+    ).first()
+    
+    if not is_teacher and not is_student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be a member of this classroom to view materials"
+        )
+    
+    materials = db.query(ClassroomMaterial).filter(
+        ClassroomMaterial.classroom_id == classroom_id
+    ).all()
+    
+    return materials
 
 
 @router.get("/analytics/{classroom_id}", response_model=ClassroomAnalytics)

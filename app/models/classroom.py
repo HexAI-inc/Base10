@@ -1,8 +1,9 @@
 """Classroom and Assignment models for teacher features."""
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Table, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Table, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
+from app.models.enums import Subject, GradeLevel, AssignmentType, AssignmentStatus, PostType, Topic, DifficultyLevel
 import secrets
 
 
@@ -37,8 +38,8 @@ class Classroom(Base):
     # Classroom details
     name = Column(String(100), nullable=False)  # e.g., "JSS3 Mathematics A"
     description = Column(Text, nullable=True)
-    subject = Column(String(50), nullable=True)  # "Mathematics", "Physics", etc.
-    grade_level = Column(String(20), nullable=True)  # "JSS1", "JSS2", "JSS3", "SS1", etc.
+    subject = Column(SQLEnum(Subject), nullable=True)  # Strict Enum
+    grade_level = Column(SQLEnum(GradeLevel), nullable=True)  # Strict Enum
     join_code = Column(String(12), unique=True, index=True, nullable=False)  # e.g., "MATH-778"
     
     # Status
@@ -89,18 +90,18 @@ class Assignment(Base):
     description = Column(Text, nullable=True)
     
     # Question filters (used to select which questions to assign)
-    subject_filter = Column(String(50), nullable=True)  # "Mathematics", "Physics", etc.
-    topic_filter = Column(String(100), nullable=True)  # "Quadratic Equations", "Mechanics"
-    difficulty_filter = Column(String(20), nullable=True)  # "easy", "medium", "hard"
+    subject_filter = Column(SQLEnum(Subject), nullable=True)
+    topic_filter = Column(SQLEnum(Topic), nullable=True)
+    difficulty_filter = Column(SQLEnum(DifficultyLevel), nullable=True)
     
     # Number of questions to assign (random selection from filters)
     question_count = Column(Integer, default=10)
     
     # Assignment type and AI support
-    assignment_type = Column(String(20), default="quiz")  # "quiz", "manual", "essay"
+    assignment_type = Column(SQLEnum(AssignmentType), default=AssignmentType.QUIZ)
     max_points = Column(Integer, default=100)
     is_ai_generated = Column(Integer, default=0)  # 0=manual, 1=AI generated
-    status = Column(String(20), default="draft")  # "draft", "published", "archived"
+    status = Column(SQLEnum(AssignmentStatus), default=AssignmentStatus.DRAFT)
     
     # Timing
     due_date = Column(DateTime(timezone=True), nullable=True)
@@ -123,7 +124,7 @@ class ClassroomPost(Base):
     classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
-    post_type = Column(String(30), default="announcement")  # announcement, discussion, assignment_alert, comment
+    post_type = Column(SQLEnum(PostType), default=PostType.ANNOUNCEMENT)
     parent_post_id = Column(Integer, ForeignKey("classroom_posts.id"), nullable=True)
     attachment_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -142,7 +143,7 @@ class ClassroomMaterial(Base):
     id = Column(Integer, primary_key=True, index=True)
     classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    asset_id = Column(String, nullable=True)  # Link to asset record or filename
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)  # Link to central asset
     title = Column(String(200), nullable=True)
     description = Column(Text, nullable=True)
     url = Column(String, nullable=True)
@@ -150,6 +151,7 @@ class ClassroomMaterial(Base):
 
     classroom = relationship("Classroom", back_populates="materials")
     uploader = relationship("User")
+    asset_ref = relationship("Asset", back_populates="classroom_materials")
 
 
 # Student submissions for manual/essay assignments

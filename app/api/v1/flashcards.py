@@ -8,36 +8,14 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
 from app.core.security import get_current_user
+from app.models.enums import Subject, DifficultyLevel
+
+from app.schemas.schemas import AssetResponse, FlashcardResponse, FlashcardDeckResponse
 
 router = APIRouter()
 
 
 # Response schemas
-class CardSchema(BaseModel):
-    """Individual flashcard."""
-    id: int
-    front: str
-    back: str
-    image_url: Optional[str]
-    
-    class Config:
-        from_attributes = True
-
-
-class DeckSchema(BaseModel):
-    """Flashcard deck with cards."""
-    id: int
-    name: str
-    description: Optional[str]
-    subject: str
-    difficulty: str
-    card_count: int
-    cards: List[CardSchema]
-    
-    class Config:
-        from_attributes = True
-
-
 class ReviewSchema(BaseModel):
     """User's review progress on a card."""
     card_id: int
@@ -54,10 +32,10 @@ class FlashcardSyncRequest(BaseModel):
     reviewed_at: datetime
 
 
-@router.get("/decks", response_model=List[DeckSchema])
+@router.get("/decks", response_model=List[FlashcardDeckResponse])
 async def get_flashcard_decks(
-    subject: Optional[str] = None,
-    difficulty: Optional[str] = None,
+    subject: Optional[Subject] = None,
+    difficulty: Optional[DifficultyLevel] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

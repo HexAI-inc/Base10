@@ -14,7 +14,8 @@ from enum import Enum
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.question import Question, Subject, DifficultyLevel
+from app.models.question import Question
+from app.models.enums import Subject, DifficultyLevel
 from app.models.progress import Attempt
 from app.models.classroom import Classroom, Assignment
 from app.models.report import QuestionReport, ReportReason
@@ -836,17 +837,6 @@ async def update_user_details(
             "is_active": user.is_active,
             "total_points": user.total_points
         }
-    }
-
-
-@router.put("/users/{user_id}/activate")
-    
-    return {
-        "message": "User deactivated successfully",
-        "user_id": user_id,
-        "reason": reason,
-        "deactivated_by": admin.email,
-        "timestamp": datetime.now(timezone.utc)
     }
 
 
