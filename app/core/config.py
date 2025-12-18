@@ -44,13 +44,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # Storage & CDN
-    STORAGE_BACKEND: str = "local"  # 's3', 'minio', or 'local'
-    S3_BUCKET_NAME: str = ""
+    STORAGE_BACKEND: str = "s3"  # 's3', 'minio', or 'local'
+    S3_BUCKET_NAME: str = "base10-storage-bucket"
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "us-east-1"
-    S3_ENDPOINT_URL: str = ""  # For MinIO self-hosted
-    S3_CDN_DOMAIN: str = ""  # CloudFront domain
+    AWS_REGION: str = "lon1"
+    S3_ENDPOINT_URL: str = "https://lon1.digitaloceanspaces.com"  # DigitalOcean Spaces Endpoint
+    S3_CDN_DOMAIN: str = "base10-storage-bucket.lon1.cdn.digitaloceanspaces.com"  # CDN Endpoint
     LOCAL_STORAGE_PATH: str = "./media"
     
     # Cloudinary (Image Optimization)

@@ -211,6 +211,9 @@ class StorageService:
         # Return public URL
         if settings.S3_CDN_DOMAIN:
             return f"https://{settings.S3_CDN_DOMAIN}/{path}"
+        elif "digitaloceanspaces.com" in settings.S3_ENDPOINT_URL:
+            # DigitalOcean Spaces public URL format
+            return f"https://{self.bucket_name}.{settings.AWS_REGION}.digitaloceanspaces.com/{path}"
         else:
             return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{path}"
     
