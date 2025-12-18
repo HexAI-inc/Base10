@@ -233,6 +233,19 @@ def upgrade() -> None:
         op.create_index(op.f('ix_attempts_user_id'), 'attempts', ['user_id'], unique=False)
 
     with op.batch_alter_table('classroom_materials', schema=None) as batch_op:
+        existing_cols = {c['name']: c for c in inspector.get_columns('classroom_materials')}
+        if 'asset_id' in existing_cols:
+            col_type = existing_cols['asset_id']['type']
+            # If it's not an Integer, we need to convert it
+            if not isinstance(col_type, sa.Integer):
+                batch_op.alter_column('asset_id',
+                    existing_type=col_type,
+                    type_=sa.Integer(),
+                    postgresql_using='asset_id::integer',
+                    existing_nullable=True)
+        else:
+            batch_op.add_column(sa.Column('asset_id', sa.Integer(), nullable=True))
+
         existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('classroom_materials')]
         if 'fk_classroom_materials_asset_id' not in existing_fks:
             batch_op.create_foreign_key('fk_classroom_materials_asset_id', 'assets', ['asset_id'], ['id'])
@@ -254,22 +267,32 @@ def upgrade() -> None:
         op.create_index(op.f('ix_classroom_posts_id'), 'classroom_posts', ['id'], unique=False)
     
     with op.batch_alter_table('questions', schema=None) as batch_op:
-        existing_cols = [c['name'] for c in inspector.get_columns('questions')]
-        if 'content' not in existing_cols:
+        existing_cols_info = {c['name']: c for c in inspector.get_columns('questions')}
+        if 'content' not in existing_cols_info:
             batch_op.add_column(sa.Column('content', sa.Text(), nullable=False, server_default=''))
-        if 'options_json' not in existing_cols:
+        if 'options_json' not in existing_cols_info:
             batch_op.add_column(sa.Column('options_json', sa.Text(), nullable=False, server_default='[]'))
-        if 'correct_index' not in existing_cols:
+        if 'correct_index' not in existing_cols_info:
             batch_op.add_column(sa.Column('correct_index', sa.Integer(), nullable=False, server_default='0'))
-        if 'explanation' not in existing_cols:
+        if 'explanation' not in existing_cols_info:
             batch_op.add_column(sa.Column('explanation', sa.Text(), nullable=True))
-        if 'exam_year' not in existing_cols:
+        if 'exam_year' not in existing_cols_info:
             batch_op.add_column(sa.Column('exam_year', sa.String(), nullable=True))
-        if 'asset_id' not in existing_cols:
+        
+        if 'asset_id' in existing_cols_info:
+            col_type = existing_cols_info['asset_id']['type']
+            if not isinstance(col_type, sa.Integer):
+                batch_op.alter_column('asset_id',
+                    existing_type=col_type,
+                    type_=sa.Integer(),
+                    postgresql_using='asset_id::integer',
+                    existing_nullable=True)
+        else:
             batch_op.add_column(sa.Column('asset_id', sa.Integer(), nullable=True))
-        if 'updated_at' not in existing_cols:
+
+        if 'updated_at' not in existing_cols_info:
             batch_op.add_column(sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True))
-        if 'deleted_at' not in existing_cols:
+        if 'deleted_at' not in existing_cols_info:
             batch_op.add_column(sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True))
         
         existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('questions')]
