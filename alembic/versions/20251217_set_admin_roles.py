@@ -21,15 +21,15 @@ def upgrade() -> None:
     op.execute("""
         UPDATE users 
         SET role = 'admin' 
-        WHERE email IN ('cjalloh25@gmail.com', 'esjallow03@gmail.com')
+        WHERE email IN ('esjallow03@gmail.com')
         AND role != 'admin'
     """)
     
     # Log the change
     op.execute("""
         UPDATE users 
-        SET updated_at = NOW() 
-        WHERE email IN ('cjalloh25@gmail.com', 'esjallow03@gmail.com')
+        SET updated_at = CURRENT_TIMESTAMP 
+        WHERE email IN ('esjallow03@gmail.com')
     """)
 
 
@@ -38,6 +38,6 @@ def downgrade() -> None:
     op.execute("""
         UPDATE users 
         SET role = 'student' 
-        WHERE email IN ('cjalloh25@gmail.com', 'esjallow03@gmail.com')
+        WHERE email IN ('esjallow03@gmail.com')
         AND role = 'admin'
     """)

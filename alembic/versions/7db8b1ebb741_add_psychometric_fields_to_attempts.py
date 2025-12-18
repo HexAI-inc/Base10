@@ -22,9 +22,36 @@ def upgrade() -> None:
     # Add psychometric tracking fields to attempts table
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+
+    # Create users table if it doesn't exist
+    if 'users' not in tables:
+        op.create_table('users',
+            sa.Column('id', sa.Integer(), primary_key=True),
+            sa.Column('email', sa.String(length=255), nullable=False, unique=True),
+            sa.Column('hashed_password', sa.String(length=255), nullable=False),
+            sa.Column('full_name', sa.String(length=255), nullable=True),
+            sa.Column('is_active', sa.Boolean(), default=True),
+            sa.Column('is_superuser', sa.Boolean(), default=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'))
+        )
+        tables.append('users')
+
+    # Create questions table if it doesn't exist
+    if 'questions' not in tables:
+        op.create_table('questions',
+            sa.Column('id', sa.Integer(), primary_key=True),
+            sa.Column('text', sa.Text(), nullable=False),
+            sa.Column('subject', sa.String(length=100), nullable=False),
+            sa.Column('topic', sa.String(length=100), nullable=True),
+            sa.Column('difficulty', sa.String(length=20), nullable=True),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'))
+        )
+        tables.append('questions')
 
     # If the attempts table doesn't exist (fresh DB), create a minimal attempts table
-    if 'attempts' not in inspector.get_table_names():
+    if 'attempts' not in tables:
         op.create_table('attempts',
             sa.Column('id', sa.Integer(), primary_key=True),
             sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False),
