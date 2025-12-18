@@ -696,6 +696,48 @@ async def get_stats_summary(
 
 # ============= User Management =============
 
+@router.get("/users")
+async def list_users(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, le=100),
+    role: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """
+    Get a paginated list of all users.
+    
+    For the admin user management page.
+    """
+    query = db.query(User)
+    
+    if role:
+        query = query.filter(User.role == role)
+        
+    total = query.count()
+    users = query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "users": [{
+            "id": u.id,
+            "email": u.email,
+            "phone_number": u.phone_number,
+            "full_name": u.full_name,
+            "role": u.role,
+            "is_verified": u.is_verified,
+            "is_active": u.is_active,
+            "created_at": u.created_at,
+            "last_activity_date": u.last_activity_date,
+            "study_streak": u.study_streak,
+            "total_points": u.total_points,
+            "level": u.level
+        } for u in users]
+    }
+
+
 @router.get("/users/search")
 async def search_users(
     query: str = Query(..., min_length=3, description="Email, phone, or name"),

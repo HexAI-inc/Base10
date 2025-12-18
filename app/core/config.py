@@ -74,6 +74,10 @@ class Settings(BaseSettings):
     # Push Notifications (Phase 2)
     FIREBASE_CREDENTIALS_PATH: str = ""
     
+    # AI
+    GOOGLE_API_KEY: str = ""
+    AI_MODEL_NAME: str = "gpt-5.1-codex-max"
+    
     # Environment
     ENVIRONMENT: str = "development"
     

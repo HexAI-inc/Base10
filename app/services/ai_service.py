@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 try:
     GOOGLE_API_KEY = getattr(settings, 'GOOGLE_API_KEY', '') or getattr(settings, 'GEMINI_API_KEY', '')
     genai.configure(api_key=GOOGLE_API_KEY)
+    # Using the configured model name for logging/tracking
+    active_model = getattr(settings, 'AI_MODEL_NAME', 'gemini-1.5-flash')
+    logger.info(f"🚀 AI Service initialized with model: {active_model}")
     model = genai.GenerativeModel('gemini-1.5-flash')
     GEMINI_AVAILABLE = bool(GOOGLE_API_KEY)
 except Exception as e:

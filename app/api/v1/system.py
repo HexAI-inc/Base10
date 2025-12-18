@@ -50,7 +50,8 @@ async def get_system_config():
             "voice_mode_enabled": True,
             "socratic_hints_enabled": True,
             "leaderboard_enabled": True,
-            "offline_sync_enabled": True
+            "offline_sync_enabled": True,
+            "gpt_5_1_codex_max_enabled": True
         }
     )
 
