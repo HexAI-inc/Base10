@@ -246,7 +246,13 @@ def upgrade() -> None:
                nullable=False)
         batch_op.alter_column('difficulty', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('easy', 'medium', 'hard', name='difficultylevel'), postgresql_using='difficulty::difficultylevel',
                existing_nullable=True)
-        batch_op.drop_column('text')
+        
+        # Check if 'text' column exists before dropping it
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_cols = [c['name'] for c in inspector.get_columns('questions')]
+        if 'text' in existing_cols:
+            batch_op.drop_column('text')
 
     with op.batch_alter_table('student_profiles', schema=None) as batch_op:
         batch_op.alter_column('contact_frequency',
