@@ -27,7 +27,7 @@ def upgrade() -> None:
             op.execute(f"DO $$ BEGIN ALTER TYPE {type_name} RENAME TO {type_name}_old; EXCEPTION WHEN undefined_object THEN null; END $$;")
         
         # Create new types with correct casing
-        op.execute("CREATE TYPE subject AS ENUM ('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English');")
+        op.execute("CREATE TYPE subject AS ENUM ('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science');")
         op.execute("CREATE TYPE topic AS ENUM ('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other');")
         op.execute("CREATE TYPE difficultylevel AS ENUM ('easy', 'medium', 'hard');")
         op.execute("CREATE TYPE assignmenttype AS ENUM ('quiz', 'manual', 'essay', 'practice');")
@@ -57,6 +57,7 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Financial Accounting' WHERE {col}::text = 'Financial_accounting'")
             op.execute(f"UPDATE {table} SET {col} = 'Agricultural Science' WHERE {col}::text = 'Agricultural_science'")
             op.execute(f"UPDATE {table} SET {col} = 'Literature in English' WHERE {col}::text = 'Literature_in_english'")
+            op.execute(f"UPDATE {table} SET {col} = 'Data Science' WHERE {col}::text = 'Data_science'")
 
         # Difficulty normalization
         for table, col in [('assignments', 'difficulty_filter'), ('flashcard_decks', 'difficulty'), ('questions', 'difficulty')]:
@@ -101,7 +102,7 @@ def upgrade() -> None:
         op.execute("ALTER TABLE assignments ALTER COLUMN status DROP DEFAULT;")
 
     with op.batch_alter_table('assignments', schema=None) as batch_op:
-        batch_op.alter_column('subject_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject_filter::subject',
+        batch_op.alter_column('subject_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject_filter::subject',
                existing_nullable=True)
         batch_op.alter_column('topic_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other', name='topic'), postgresql_using='topic_filter::topic',
                existing_nullable=True)
@@ -154,7 +155,7 @@ def upgrade() -> None:
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
 
     with op.batch_alter_table('classrooms', schema=None) as batch_op:
-        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
+        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject::subject',
                existing_nullable=True)
         batch_op.alter_column('grade_level', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other', name='gradelevel'), postgresql_using='grade_level::gradelevel',
                existing_nullable=True)
@@ -172,7 +173,7 @@ def upgrade() -> None:
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
 
     with op.batch_alter_table('flashcard_decks', schema=None) as batch_op:
-        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
+        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject::subject',
                existing_nullable=False)
         batch_op.alter_column('difficulty', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('easy', 'medium', 'hard', name='difficultylevel'), postgresql_using='difficulty::difficultylevel',
                existing_nullable=False)
@@ -184,7 +185,7 @@ def upgrade() -> None:
                existing_nullable=False)
 
     with op.batch_alter_table('questions', schema=None) as batch_op:
-        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
+        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject::subject',
                existing_nullable=False)
         batch_op.alter_column('topic', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other', name='topic'), postgresql_using='topic::topic',
                nullable=False)
