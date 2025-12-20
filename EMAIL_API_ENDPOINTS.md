@@ -425,7 +425,7 @@ curl -X POST http://localhost:8000/api/v1/auth/resend-verification \
 
 ### Required Environment Variables
 ```bash
-RESEND_API_KEY=re_28QHmQXc_4UyXTBGMbsvoRZjsgGUscgz4
+RESEND_API_KEY=re_your_api_key_here
 RESEND_FROM_EMAIL=Base10 <noreply@cjalloh.com>
 FRONTEND_URL=http://localhost:3000  # Update for production
 ```

@@ -24,7 +24,7 @@ services:
         type: SECRET
         # OPTIONAL for MVP - app works without Redis (uses in-memory cache)
         # Get free Redis from: railway.app or render.com
-        value: "redis://localhost:6379/0"  # Will fallback to in-memory if unavailable
+        value: ""  # Will fallback to in-memory if unavailable
       
       - key: SECRET_KEY
         scope: RUN_TIME
@@ -41,7 +41,7 @@ services:
       
       - key: ENVIRONMENT
         scope: RUN_TIME
-        value: "production"
+        value: ""
       # Storage configuration - LOCAL FOR MVP (FREE!)
       - key: STORAGE_BACKEND
         scope: RUN_TIME
@@ -55,12 +55,12 @@ services:
       # - key: S3_BUCKET_NAME
       #   scope: RUN_TIME
       #   value: "base10-media"
-        value: "base10-media.nyc3.cdn.digitaloceanspaces.com"
+        value: ""
       
       # CORS
       - key: BACKEND_CORS_ORIGINS
         scope: RUN_TIME
-        value: '["https://base10.education","http://localhost:3000","http://127.0.0.1:3000"]'
+        value: '["*"]'
       
       # Optional: Twilio (Phase 3)
       - key: TWILIO_ACCOUNT_SID

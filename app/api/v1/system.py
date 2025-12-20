@@ -51,7 +51,7 @@ async def get_system_config():
             "socratic_hints_enabled": True,
             "leaderboard_enabled": True,
             "offline_sync_enabled": True,
-            "gpt_5_1_codex_max_enabled": True
+            "gemma_12b_enabled": True
         }
     )
 

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days (offline-first needs longer tokens)
     
     # CORS - Allow web app and mobile app
-    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app"]'
+    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm"]'
     
     @property
     def CORS_ORIGINS(self) -> List[str]:
@@ -63,9 +63,6 @@ class Settings(BaseSettings):
     POSTHOG_HOST: str = "https://app.posthog.com"
     TIMESCALE_URL: str = ""  # PostgreSQL with TimescaleDB extension
     
-    # Google AI
-    GOOGLE_API_KEY: str = ""
-    
     # Email Service (Resend)
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "Base10 <noreply@base10.app>"
@@ -76,7 +73,7 @@ class Settings(BaseSettings):
     
     # AI
     GOOGLE_API_KEY: str = ""
-    AI_MODEL_NAME: str = "gpt-5.1-codex-max"
+    AI_MODEL_NAME: str = "gemma-12b"
     
     # Environment
     ENVIRONMENT: str = "development"

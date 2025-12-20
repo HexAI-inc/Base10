@@ -1,6 +1,6 @@
 """
 Voice Service for Speech-to-Text and Text-to-Speech.
-Uses Gemini for high-accuracy transcription and Google TTS for natural voice output.
+Uses Gemma for high-accuracy transcription and Google TTS for natural voice output.
 """
 import os
 import logging
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class VoiceService:
     """
     Handles voice interactions:
-    1. STT (Speech-to-Text) using Gemini Multimodal
+    1. STT (Speech-to-Text) using Gemma Multimodal
     2. TTS (Text-to-Speech) using high-quality providers
     """
     
@@ -21,14 +21,15 @@ class VoiceService:
         self.api_key = getattr(settings, 'GOOGLE_API_KEY', '') or getattr(settings, 'GEMINI_API_KEY', '')
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            active_model = getattr(settings, 'AI_MODEL_NAME', 'gemma-12b')
+            self.model = genai.GenerativeModel(active_model)
         else:
             self.model = None
-            logger.warning("⚠️ Gemini API key not found. Voice STT will be disabled.")
+            logger.warning("⚠️ AI API key not found. Voice STT will be disabled.")
 
     async def transcribe_audio(self, audio_file: BinaryIO, mime_type: str = "audio/wav") -> Optional[str]:
         """
-        Transcribe audio using Gemini 1.5 Flash.
+        Transcribe audio using Gemma.
         Better than browser STT because it handles accents and background noise better.
         """
         if not self.model:

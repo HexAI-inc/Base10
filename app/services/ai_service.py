@@ -22,7 +22,7 @@ try:
     # Using the configured model name for logging/tracking
     active_model = getattr(settings, 'AI_MODEL_NAME', 'gemini-1.5-flash')
     logger.info(f"🚀 AI Service initialized with model: {active_model}")
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel(active_model)
     GEMINI_AVAILABLE = bool(GOOGLE_API_KEY)
 except Exception as e:
     logger.error(f"Failed to configure Gemini: {e}")
@@ -204,7 +204,7 @@ async def chat_with_ai(
     try:
         # Create chat with system instruction
         chat_model = genai.GenerativeModel(
-            'gemini-1.5-flash',
+            active_model,
             system_instruction=system_prompt
         )
         
