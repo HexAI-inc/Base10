@@ -140,6 +140,19 @@ def upgrade() -> None:
             END WHERE grade_level IS NOT NULL
         """)
 
+        # Education Level normalization for users
+        op.execute("""
+            UPDATE users SET education_level = CASE 
+                WHEN UPPER(education_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(education_level::text)
+                WHEN education_level::text = 'Sss3' THEN 'SS3'  -- Handle typo
+                WHEN education_level::text ILIKE 'grade%10%' THEN 'Grade 10'
+                WHEN education_level::text ILIKE 'grade%11%' THEN 'Grade 11'
+                WHEN education_level::text ILIKE 'grade%12%' THEN 'Grade 12'
+                WHEN UPPER(education_level::text) = 'UNIVERSITY' THEN 'University'
+                ELSE INITCAP(education_level::text)
+            END WHERE education_level IS NOT NULL
+        """)
+
         # Report Reason normalization
         op.execute("""
             UPDATE question_reports SET reason = CASE 
@@ -332,6 +345,8 @@ def upgrade() -> None:
                existing_type=sa.INTEGER(),
                nullable=True,
                existing_server_default=sa.text("'0'"))
+        batch_op.alter_column('education_level', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Grade 10', 'Grade 11', 'Grade 12', 'University', 'Other', name='gradelevel'), postgresql_using='education_level::gradelevel',
+               existing_nullable=True)
         
         # Check existing constraints before dropping
         from alembic import context
