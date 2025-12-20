@@ -101,7 +101,7 @@ def upgrade() -> None:
         op.execute("ALTER TABLE assignments ALTER COLUMN status DROP DEFAULT;")
 
     with op.batch_alter_table('assignments', schema=None) as batch_op:
-        batch_op.alter_column('subject_filter', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject_filter::subject',
+        batch_op.alter_column('subject_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject_filter::subject',
                existing_nullable=True)
         batch_op.alter_column('topic_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other', name='topic'), postgresql_using='topic_filter::topic',
                existing_nullable=True)
@@ -154,7 +154,7 @@ def upgrade() -> None:
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
 
     with op.batch_alter_table('classrooms', schema=None) as batch_op:
-        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
+        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
                existing_nullable=True)
         batch_op.alter_column('grade_level', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other', name='gradelevel'), postgresql_using='grade_level::gradelevel',
                existing_nullable=True)
@@ -172,7 +172,7 @@ def upgrade() -> None:
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
 
     with op.batch_alter_table('flashcard_decks', schema=None) as batch_op:
-        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
+        batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
                existing_nullable=False)
         batch_op.alter_column('difficulty', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('easy', 'medium', 'hard', name='difficultylevel'), postgresql_using='difficulty::difficultylevel',
                existing_nullable=False)
@@ -180,7 +180,7 @@ def upgrade() -> None:
     with op.batch_alter_table('question_reports', schema=None) as batch_op:
         batch_op.alter_column('status', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('pending', 'reviewed', 'fixed', 'dismissed', name='reportstatus'), postgresql_using='status::reportstatus',
                existing_nullable=True)
-        batch_op.alter_column('reason', existing_type=sa.Enum('WRONG_ANSWER', 'TYPO', 'UNCLEAR_QUESTION', 'MISSING_DIAGRAM', 'OUTDATED_CONTENT', 'OTHER', name='reportreason'), type_=sa.Enum('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other', name='reportreason'), postgresql_using='reason::reportreason',
+        batch_op.alter_column('reason', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other', name='reportreason'), postgresql_using='reason::reportreason',
                existing_nullable=False)
 
     with op.batch_alter_table('questions', schema=None) as batch_op:
