@@ -267,10 +267,22 @@ def upgrade() -> None:
                existing_type=sa.DATETIME(),
                nullable=True,
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
-        batch_op.drop_constraint(batch_op.f('uq_classroom_student'), type_='unique')
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_student_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_teacher_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_classroom_id_classrooms'), type_='foreignkey')
+        
+        # Check existing constraints before dropping
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('student_profiles')]
+        existing_uniques = [uq['name'] for uq in inspector.get_unique_constraints('student_profiles')]
+        
+        if 'uq_classroom_student' in existing_uniques:
+            batch_op.drop_constraint(batch_op.f('uq_classroom_student'), type_='unique')
+        if 'fk_student_profiles_student_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_student_id_users'), type_='foreignkey')
+        if 'fk_student_profiles_teacher_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_teacher_id_users'), type_='foreignkey')
+        if 'fk_student_profiles_classroom_id_classrooms' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_classroom_id_classrooms'), type_='foreignkey')
+        
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_classroom_id_classrooms'), 'classrooms', ['classroom_id'], ['id'])
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_student_id_users'), 'users', ['student_id'], ['id'])
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_teacher_id_users'), 'users', ['teacher_id'], ['id'])
@@ -290,9 +302,19 @@ def upgrade() -> None:
                existing_type=sa.DATETIME(),
                nullable=True,
                existing_server_default=sa.text('(CURRENT_TIMESTAMP)'))
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_student_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_teacher_id_users'), type_='foreignkey')
+        
+        # Check existing constraints before dropping
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('teacher_messages')]
+        
+        if 'fk_teacher_messages_student_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_student_id_users'), type_='foreignkey')
+        if 'fk_teacher_messages_classroom_id_classrooms' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), type_='foreignkey')
+        if 'fk_teacher_messages_teacher_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_teacher_id_users'), type_='foreignkey')
+        
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), 'classrooms', ['classroom_id'], ['id'])
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_student_id_users'), 'users', ['student_id'], ['id'])
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_teacher_id_users'), 'users', ['teacher_id'], ['id'])
@@ -309,7 +331,15 @@ def upgrade() -> None:
                existing_type=sa.INTEGER(),
                nullable=True,
                existing_server_default=sa.text("'0'"))
-        batch_op.drop_constraint(batch_op.f('uq_users_email'), type_='unique')
+        
+        # Check existing constraints before dropping
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_uniques = [uq['name'] for uq in inspector.get_unique_constraints('users')]
+        
+        if 'uq_users_email' in existing_uniques:
+            batch_op.drop_constraint(batch_op.f('uq_users_email'), type_='unique')
+        
         batch_op.drop_column('is_superuser')
 
     # Drop old types after successful migration
@@ -338,9 +368,18 @@ def downgrade() -> None:
                nullable=False)
 
     with op.batch_alter_table('teacher_messages', schema=None) as batch_op:
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_teacher_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_student_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), type_='foreignkey')
+        # Check existing constraints before dropping
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('teacher_messages')]
+        
+        if 'fk_teacher_messages_teacher_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_teacher_id_users'), type_='foreignkey')
+        if 'fk_teacher_messages_student_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_student_id_users'), type_='foreignkey')
+        if 'fk_teacher_messages_classroom_id_classrooms' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), type_='foreignkey')
+        
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_teacher_id_users'), 'users', ['teacher_id'], ['id'], ondelete='CASCADE')
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_classroom_id_classrooms'), 'classrooms', ['classroom_id'], ['id'], ondelete='CASCADE')
         batch_op.create_foreign_key(batch_op.f('fk_teacher_messages_student_id_users'), 'users', ['student_id'], ['id'], ondelete='CASCADE')
@@ -360,9 +399,18 @@ def downgrade() -> None:
                existing_server_default=sa.text("'0'"))
 
     with op.batch_alter_table('student_profiles', schema=None) as batch_op:
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_teacher_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_student_id_users'), type_='foreignkey')
-        batch_op.drop_constraint(batch_op.f('fk_student_profiles_classroom_id_classrooms'), type_='foreignkey')
+        # Check existing constraints before dropping
+        from alembic import context
+        inspector = sa.inspect(op.get_bind())
+        existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('student_profiles')]
+        
+        if 'fk_student_profiles_teacher_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_teacher_id_users'), type_='foreignkey')
+        if 'fk_student_profiles_student_id_users' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_student_id_users'), type_='foreignkey')
+        if 'fk_student_profiles_classroom_id_classrooms' in existing_fks:
+            batch_op.drop_constraint(batch_op.f('fk_student_profiles_classroom_id_classrooms'), type_='foreignkey')
+        
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_classroom_id_classrooms'), 'classrooms', ['classroom_id'], ['id'], ondelete='CASCADE')
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_teacher_id_users'), 'users', ['teacher_id'], ['id'], ondelete='CASCADE')
         batch_op.create_foreign_key(batch_op.f('fk_student_profiles_student_id_users'), 'users', ['student_id'], ['id'], ondelete='CASCADE')
