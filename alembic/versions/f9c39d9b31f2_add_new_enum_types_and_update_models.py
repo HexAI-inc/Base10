@@ -27,14 +27,14 @@ def upgrade() -> None:
         op.execute("DO $$ BEGIN CREATE TYPE userrole AS ENUM ('student', 'teacher', 'admin', 'moderator'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
 
         # Normalize data before casting
-        op.execute("UPDATE users SET role = LOWER(role::text)::userrole WHERE role IS NOT NULL")
-        op.execute("UPDATE otps SET purpose = LOWER(purpose::text)::otptype WHERE role IS NOT NULL")
-        op.execute("UPDATE assets SET asset_type = LOWER(asset_type::text)::assettype WHERE asset_type IS NOT NULL")
+        op.execute("UPDATE users SET role = LOWER(role::text) WHERE role IS NOT NULL")
+        op.execute("UPDATE otps SET purpose = LOWER(purpose::text) WHERE purpose IS NOT NULL")
+        op.execute("UPDATE assets SET asset_type = LOWER(asset_type::text) WHERE asset_type IS NOT NULL")
         op.execute("""
             UPDATE users SET education_level = CASE 
                 WHEN UPPER(education_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(education_level::text)
                 ELSE INITCAP(education_level::text)
-            END::gradelevel WHERE education_level IS NOT NULL
+            END WHERE education_level IS NOT NULL
         """)
 
         # Drop defaults that cause casting issues in PostgreSQL

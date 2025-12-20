@@ -23,7 +23,7 @@ def upgrade() -> None:
     # Create Enum types for PostgreSQL
     if op.get_bind().dialect.name == 'postgresql':
         # Rename existing types to avoid conflicts with new Title Case definitions
-        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus']:
+        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus', 'reportreason']:
             op.execute(f"DO $$ BEGIN ALTER TYPE {type_name} RENAME TO {type_name}_old; EXCEPTION WHEN undefined_object THEN null; END $$;")
         
         # Create new types with correct casing
@@ -35,6 +35,7 @@ def upgrade() -> None:
         op.execute("CREATE TYPE posttype AS ENUM ('announcement', 'discussion', 'assignment_alert', 'comment', 'resource');")
         op.execute("CREATE TYPE reportstatus AS ENUM ('pending', 'reviewed', 'fixed', 'dismissed');")
         op.execute("CREATE TYPE gradelevel AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other');")
+        op.execute("CREATE TYPE reportreason AS ENUM ('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other');")
 
         # Normalize data in tables before casting
         # Subject normalization
@@ -70,6 +71,18 @@ def upgrade() -> None:
                 WHEN UPPER(grade_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level::text)
                 ELSE INITCAP(grade_level::text)
             END::gradelevel_old WHERE grade_level IS NOT NULL
+        """)
+
+        # Report Reason normalization
+        op.execute("""
+            UPDATE question_reports SET reason = CASE 
+                WHEN reason::text = 'WRONG_ANSWER' THEN 'Wrong Answer'
+                WHEN reason::text = 'TYPO' THEN 'Typo'
+                WHEN reason::text = 'UNCLEAR_QUESTION' THEN 'Unclear Question'
+                WHEN reason::text = 'MISSING_DIAGRAM' THEN 'Missing Diagram'
+                WHEN reason::text = 'OUTDATED_CONTENT' THEN 'Outdated Content'
+                ELSE 'Other'
+            END::reportreason_old WHERE reason IS NOT NULL
         """)
 
         # Drop defaults that cause casting issues in PostgreSQL
@@ -156,6 +169,8 @@ def upgrade() -> None:
     with op.batch_alter_table('question_reports', schema=None) as batch_op:
         batch_op.alter_column('status', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('pending', 'reviewed', 'fixed', 'dismissed', name='reportstatus'), postgresql_using='status::reportstatus',
                existing_nullable=True)
+        batch_op.alter_column('reason', existing_type=sa.Enum('WRONG_ANSWER', 'TYPO', 'UNCLEAR_QUESTION', 'MISSING_DIAGRAM', 'OUTDATED_CONTENT', 'OTHER', name='reportreason'), type_=sa.Enum('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other', name='reportreason'), postgresql_using='reason::reportreason',
+               existing_nullable=False)
 
     with op.batch_alter_table('questions', schema=None) as batch_op:
         batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', name='subject'), postgresql_using='subject::subject',
@@ -226,7 +241,7 @@ def upgrade() -> None:
 
     # Drop old types after successful migration
     if op.get_bind().dialect.name == 'postgresql':
-        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus']:
+        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus', 'reportreason']:
             op.execute(f"DO $$ BEGIN DROP TYPE IF EXISTS {type_name}_old; EXCEPTION WHEN others THEN null; END $$;")
 
     # ### end Alembic commands ###
