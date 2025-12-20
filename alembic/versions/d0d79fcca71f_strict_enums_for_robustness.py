@@ -28,7 +28,52 @@ def upgrade() -> None:
         
         # Create new types with correct casing
         op.execute("CREATE TYPE subject AS ENUM ('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science');")
-        op.execute("CREATE TYPE topic AS ENUM ('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other');")
+        op.execute("""
+            CREATE TYPE topic AS ENUM (
+                'Algebra',
+                'Geometry', 
+                'Trigonometry',
+                'Statistics',
+                'Probability',
+                'Calculus',
+                'Number Bases',
+                'Sets',
+                'Logarithms',
+                'Fractions',
+                'Decimals',
+                'Ratios',
+                'Percentages',
+                'Indices',
+                'Surds',
+                'Grammar',
+                'Comprehension',
+                'Vocabulary',
+                'Oral English',
+                'Writing',
+                'Mechanics',
+                'Thermal Physics',
+                'Waves',
+                'Electricity',
+                'Magnetism',
+                'Atomic Physics',
+                'Optics',
+                'Atomic Structure',
+                'Chemical Bonding',
+                'Stoichiometry',
+                'States of Matter',
+                'Periodic Table',
+                'Organic Chemistry',
+                'Electrochemistry',
+                'Cell Biology',
+                'Genetics',
+                'Ecology',
+                'Physiology',
+                'Evolution',
+                'Classification',
+                'General',
+                'Other'
+            );
+        """)
         op.execute("CREATE TYPE difficultylevel AS ENUM ('easy', 'medium', 'hard');")
         op.execute("CREATE TYPE assignmenttype AS ENUM ('quiz', 'manual', 'essay', 'practice');")
         op.execute("CREATE TYPE assignmentstatus AS ENUM ('draft', 'published', 'archived', 'completed');")
