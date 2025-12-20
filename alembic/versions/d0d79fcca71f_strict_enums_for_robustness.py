@@ -297,7 +297,8 @@ def upgrade() -> None:
         batch_op.alter_column('is_read',
                existing_type=sa.BOOLEAN(),
                type_=sa.Integer(),
-               nullable=True)
+               nullable=True,
+               postgresql_using='is_read::integer')
         batch_op.alter_column('sent_at',
                existing_type=sa.DATETIME(),
                nullable=True,
@@ -390,7 +391,8 @@ def downgrade() -> None:
         batch_op.alter_column('is_read',
                existing_type=sa.Integer(),
                type_=sa.BOOLEAN(),
-               nullable=False)
+               nullable=False,
+               postgresql_using='is_read::boolean')
 
     with op.batch_alter_table('submissions', schema=None) as batch_op:
         batch_op.alter_column('is_graded',
