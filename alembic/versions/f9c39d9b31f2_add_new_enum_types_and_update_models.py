@@ -37,6 +37,12 @@ def upgrade() -> None:
             END WHERE education_level IS NOT NULL
         """)
 
+        # Convert columns to VARCHAR temporarily
+        op.execute("ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(50)")
+        op.execute("ALTER TABLE users ALTER COLUMN education_level TYPE VARCHAR(50)")
+        op.execute("ALTER TABLE otps ALTER COLUMN purpose TYPE VARCHAR(20)")
+        op.execute("ALTER TABLE assets ALTER COLUMN asset_type TYPE VARCHAR(50)")
+
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE users ALTER COLUMN role DROP DEFAULT;")
 
