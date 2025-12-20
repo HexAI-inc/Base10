@@ -34,7 +34,7 @@ def upgrade() -> None:
         op.execute("CREATE TYPE assignmentstatus AS ENUM ('draft', 'published', 'archived', 'completed');")
         op.execute("CREATE TYPE posttype AS ENUM ('announcement', 'discussion', 'assignment_alert', 'comment', 'resource');")
         op.execute("CREATE TYPE reportstatus AS ENUM ('pending', 'reviewed', 'fixed', 'dismissed');")
-        op.execute("CREATE TYPE gradelevel AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other');")
+        op.execute("CREATE TYPE gradelevel AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Grade 10', 'Grade 11', 'Grade 12', 'University', 'Other');")
         op.execute("CREATE TYPE reportreason AS ENUM ('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other');")
 
         # Convert columns to VARCHAR temporarily to allow any string value during normalization
@@ -81,6 +81,10 @@ def upgrade() -> None:
         op.execute("""
             UPDATE classrooms SET grade_level = CASE 
                 WHEN UPPER(grade_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level::text)
+                WHEN grade_level::text ILIKE 'grade%10%' THEN 'Grade 10'
+                WHEN grade_level::text ILIKE 'grade%11%' THEN 'Grade 11'
+                WHEN grade_level::text ILIKE 'grade%12%' THEN 'Grade 12'
+                WHEN UPPER(grade_level::text) = 'UNIVERSITY' THEN 'University'
                 ELSE INITCAP(grade_level::text)
             END WHERE grade_level IS NOT NULL
         """)
@@ -157,7 +161,7 @@ def upgrade() -> None:
     with op.batch_alter_table('classrooms', schema=None) as batch_op:
         batch_op.alter_column('subject', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject::subject',
                existing_nullable=True)
-        batch_op.alter_column('grade_level', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other', name='gradelevel'), postgresql_using='grade_level::gradelevel',
+        batch_op.alter_column('grade_level', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Grade 10', 'Grade 11', 'Grade 12', 'University', 'Other', name='gradelevel'), postgresql_using='grade_level::gradelevel',
                existing_nullable=True)
         batch_op.alter_column('is_active',
                existing_type=sa.BOOLEAN(),
