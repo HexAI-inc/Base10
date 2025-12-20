@@ -39,36 +39,36 @@ def upgrade() -> None:
         # Normalize data in tables before casting
         # Subject normalization
         for table, col in [('assignments', 'subject_filter'), ('classrooms', 'subject'), ('flashcard_decks', 'subject'), ('questions', 'subject')]:
-            op.execute(f"UPDATE {table} SET {col} = INITCAP({col}) WHERE {col} IS NOT NULL")
-            op.execute(f"UPDATE {table} SET {col} = 'English Language' WHERE {col} = 'English'")
-            op.execute(f"UPDATE {table} SET {col} = 'Civic Education' WHERE {col} = 'Civic_education'")
-            op.execute(f"UPDATE {table} SET {col} = 'Financial Accounting' WHERE {col} = 'Financial_accounting'")
-            op.execute(f"UPDATE {table} SET {col} = 'Agricultural Science' WHERE {col} = 'Agricultural_science'")
-            op.execute(f"UPDATE {table} SET {col} = 'Literature in English' WHERE {col} = 'Literature_in_english'")
+            op.execute(f"UPDATE {table} SET {col} = INITCAP({col}::text) WHERE {col} IS NOT NULL")
+            op.execute(f"UPDATE {table} SET {col} = 'English Language' WHERE {col}::text = 'English'")
+            op.execute(f"UPDATE {table} SET {col} = 'Civic Education' WHERE {col}::text = 'Civic_education'")
+            op.execute(f"UPDATE {table} SET {col} = 'Financial Accounting' WHERE {col}::text = 'Financial_accounting'")
+            op.execute(f"UPDATE {table} SET {col} = 'Agricultural Science' WHERE {col}::text = 'Agricultural_science'")
+            op.execute(f"UPDATE {table} SET {col} = 'Literature in English' WHERE {col}::text = 'Literature_in_english'")
 
         # Difficulty normalization
         for table, col in [('assignments', 'difficulty_filter'), ('flashcard_decks', 'difficulty'), ('questions', 'difficulty')]:
-            op.execute(f"UPDATE {table} SET {col} = LOWER({col}) WHERE {col} IS NOT NULL")
+            op.execute(f"UPDATE {table} SET {col} = LOWER({col}::text) WHERE {col} IS NOT NULL")
 
         # Topic normalization
         for table, col in [('assignments', 'topic_filter'), ('questions', 'topic')]:
-            op.execute(f"UPDATE {table} SET {col} = INITCAP({col}) WHERE {col} IS NOT NULL")
-            op.execute(f"UPDATE {table} SET {col} = 'Number Bases' WHERE {col} = 'Number_bases'")
-            op.execute(f"UPDATE {table} SET {col} = 'Oral English' WHERE {col} = 'Oral_english'")
-            op.execute(f"UPDATE {table} SET {col} = 'Thermal Physics' WHERE {col} = 'Thermal_physics'")
-            op.execute(f"UPDATE {table} SET {col} = 'Atomic Physics' WHERE {col} = 'Atomic_physics'")
-            op.execute(f"UPDATE {table} SET {col} = 'Atomic Structure' WHERE {col} = 'Atomic_structure'")
-            op.execute(f"UPDATE {table} SET {col} = 'Chemical Bonding' WHERE {col} = 'Chemical_bonding'")
-            op.execute(f"UPDATE {table} SET {col} = 'States of Matter' WHERE {col} = 'States_of_matter'")
-            op.execute(f"UPDATE {table} SET {col} = 'Periodic Table' WHERE {col} = 'Periodic_table'")
-            op.execute(f"UPDATE {table} SET {col} = 'Organic Chemistry' WHERE {col} = 'Organic_chemistry'")
-            op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col} = 'Cell_biology'")
+            op.execute(f"UPDATE {table} SET {col} = INITCAP({col}::text) WHERE {col} IS NOT NULL")
+            op.execute(f"UPDATE {table} SET {col} = 'Number Bases' WHERE {col}::text = 'Number_bases'")
+            op.execute(f"UPDATE {table} SET {col} = 'Oral English' WHERE {col}::text = 'Oral_english'")
+            op.execute(f"UPDATE {table} SET {col} = 'Thermal Physics' WHERE {col}::text = 'Thermal_physics'")
+            op.execute(f"UPDATE {table} SET {col} = 'Atomic Physics' WHERE {col}::text = 'Atomic_physics'")
+            op.execute(f"UPDATE {table} SET {col} = 'Atomic Structure' WHERE {col}::text = 'Atomic_structure'")
+            op.execute(f"UPDATE {table} SET {col} = 'Chemical Bonding' WHERE {col}::text = 'Chemical_bonding'")
+            op.execute(f"UPDATE {table} SET {col} = 'States of Matter' WHERE {col}::text = 'States_of_matter'")
+            op.execute(f"UPDATE {table} SET {col} = 'Periodic Table' WHERE {col}::text = 'Periodic_table'")
+            op.execute(f"UPDATE {table} SET {col} = 'Organic Chemistry' WHERE {col}::text = 'Organic_chemistry'")
+            op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col}::text = 'Cell_biology'")
 
         # Grade Level normalization
         op.execute("""
             UPDATE classrooms SET grade_level = CASE 
-                WHEN UPPER(grade_level) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level)
-                ELSE INITCAP(grade_level)
+                WHEN UPPER(grade_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level::text)
+                ELSE INITCAP(grade_level::text)
             END WHERE grade_level IS NOT NULL
         """)
 
