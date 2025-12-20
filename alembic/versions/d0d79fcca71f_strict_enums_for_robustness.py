@@ -65,12 +65,12 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col} = 'Cell_biology'")
 
         # Grade Level normalization
-        op.execute(\"\"\"
+        op.execute("""
             UPDATE classrooms SET grade_level = CASE 
                 WHEN UPPER(grade_level) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level)
                 ELSE INITCAP(grade_level)
             END WHERE grade_level IS NOT NULL
-        \"\"\")
+        """)
 
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE assignments ALTER COLUMN assignment_type DROP DEFAULT;")
