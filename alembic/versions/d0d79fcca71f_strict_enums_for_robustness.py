@@ -337,11 +337,13 @@ def upgrade() -> None:
         from alembic import context
         inspector = sa.inspect(op.get_bind())
         existing_uniques = [uq['name'] for uq in inspector.get_unique_constraints('users')]
+        existing_cols = [c['name'] for c in inspector.get_columns('users')]
         
         if 'uq_users_email' in existing_uniques:
             batch_op.drop_constraint(batch_op.f('uq_users_email'), type_='unique')
         
-        batch_op.drop_column('is_superuser')
+        if 'is_superuser' in existing_cols:
+            batch_op.drop_column('is_superuser')
 
     # Drop old types after successful migration
     if op.get_bind().dialect.name == 'postgresql':
