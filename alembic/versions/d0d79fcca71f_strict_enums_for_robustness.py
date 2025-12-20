@@ -58,7 +58,8 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Agricultural Science' WHERE {col}::text = 'Agricultural_science'")
             op.execute(f"UPDATE {table} SET {col} = 'Literature in English' WHERE {col}::text = 'Literature_in_english'")
             # Map any remaining unknown values to 'Other'
-            op.execute(f"UPDATE {table} SET {col} = 'Other' WHERE {col}::text NOT IN ('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science')")
+            valid_subjects = ('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science')
+            op.execute(f"UPDATE {table} SET {col} = 'Other' WHERE {col}::text NOT IN {valid_subjects}")
             op.execute(f"UPDATE {table} SET {col} = 'Data Science' WHERE {col}::text = 'Data_science'")
 
         # Difficulty normalization
@@ -79,7 +80,8 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Organic Chemistry' WHERE {col}::text = 'Organic_chemistry'")
             op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col}::text = 'Cell_biology'")
             # Map any remaining unknown values to 'Other'
-            op.execute(f"UPDATE {table} SET {col} = 'Other' WHERE {col}::text NOT IN ('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Fractions', 'Decimals', 'Ratios', 'Percentages', 'Indices', 'Surds', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other')")
+            valid_topics = ('Algebra', 'Geometry', 'Trigonometry', 'Statistics', 'Probability', 'Calculus', 'Number Bases', 'Sets', 'Logarithms', 'Fractions', 'Decimals', 'Ratios', 'Percentages', 'Indices', 'Surds', 'Grammar', 'Comprehension', 'Vocabulary', 'Oral English', 'Writing', 'Mechanics', 'Thermal Physics', 'Waves', 'Electricity', 'Magnetism', 'Atomic Physics', 'Optics', 'Atomic Structure', 'Chemical Bonding', 'Stoichiometry', 'States of Matter', 'Periodic Table', 'Organic Chemistry', 'Electrochemistry', 'Cell Biology', 'Genetics', 'Ecology', 'Physiology', 'Evolution', 'Classification', 'General', 'Other')
+            op.execute(f"UPDATE {table} SET {col} = 'Other' WHERE {col}::text NOT IN {valid_topics}")
 
         # Grade Level normalization
         op.execute("""
