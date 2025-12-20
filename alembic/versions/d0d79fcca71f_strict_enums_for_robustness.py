@@ -37,6 +37,17 @@ def upgrade() -> None:
         op.execute("CREATE TYPE gradelevel AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'University', 'Other');")
         op.execute("CREATE TYPE reportreason AS ENUM ('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other');")
 
+        # Convert columns to VARCHAR temporarily to allow any string value during normalization
+        for table, col in [('assignments', 'subject_filter'), ('classrooms', 'subject'), ('flashcard_decks', 'subject'), ('questions', 'subject')]:
+            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(100)")
+        for table, col in [('assignments', 'difficulty_filter'), ('flashcard_decks', 'difficulty'), ('questions', 'difficulty')]:
+            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(20)")
+        for table, col in [('assignments', 'topic_filter'), ('questions', 'topic')]:
+            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(100)")
+        op.execute("ALTER TABLE classrooms ALTER COLUMN grade_level TYPE VARCHAR(20)")
+        op.execute("ALTER TABLE question_reports ALTER COLUMN reason TYPE VARCHAR(50)")
+        op.execute("ALTER TABLE question_reports ALTER COLUMN status TYPE VARCHAR(20)")
+
         # Normalize data in tables before casting
         # Subject normalization
         for table, col in [('assignments', 'subject_filter'), ('classrooms', 'subject'), ('flashcard_decks', 'subject'), ('questions', 'subject')]:
@@ -66,15 +77,15 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col}::text = 'Cell_biology'")
 
         # Grade Level normalization
-        op.execute("""
+        op.execute(\"\"\"
             UPDATE classrooms SET grade_level = CASE 
                 WHEN UPPER(grade_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level::text)
                 ELSE INITCAP(grade_level::text)
             END WHERE grade_level IS NOT NULL
-        """)
+        \"\"\")
 
         # Report Reason normalization
-        op.execute("""
+        op.execute(\"\"\"
             UPDATE question_reports SET reason = CASE 
                 WHEN reason::text = 'WRONG_ANSWER' THEN 'Wrong Answer'
                 WHEN reason::text = 'TYPO' THEN 'Typo'
@@ -83,18 +94,7 @@ def upgrade() -> None:
                 WHEN reason::text = 'OUTDATED_CONTENT' THEN 'Outdated Content'
                 ELSE 'Other'
             END WHERE reason IS NOT NULL
-        """)
-
-        # Convert columns to VARCHAR temporarily to allow any string value during normalization
-        for table, col in [('assignments', 'subject_filter'), ('classrooms', 'subject'), ('flashcard_decks', 'subject'), ('questions', 'subject')]:
-            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(100)")
-        for table, col in [('assignments', 'difficulty_filter'), ('flashcard_decks', 'difficulty'), ('questions', 'difficulty')]:
-            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(20)")
-        for table, col in [('assignments', 'topic_filter'), ('questions', 'topic')]:
-            op.execute(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE VARCHAR(100)")
-        op.execute("ALTER TABLE classrooms ALTER COLUMN grade_level TYPE VARCHAR(20)")
-        op.execute("ALTER TABLE question_reports ALTER COLUMN reason TYPE VARCHAR(50)")
-        op.execute("ALTER TABLE question_reports ALTER COLUMN status TYPE VARCHAR(20)")
+        \"\"\")
 
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE assignments ALTER COLUMN assignment_type DROP DEFAULT;")
