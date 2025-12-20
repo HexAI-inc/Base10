@@ -36,12 +36,12 @@ def upgrade() -> None:
         op.execute("UPDATE users SET role = LOWER(role::text) WHERE role IS NOT NULL")
         op.execute("UPDATE otps SET purpose = LOWER(purpose::text) WHERE purpose IS NOT NULL")
         op.execute("UPDATE assets SET asset_type = LOWER(asset_type::text) WHERE asset_type IS NOT NULL")
-        op.execute(\"\"\"
+        op.execute("""
             UPDATE users SET education_level = CASE 
                 WHEN UPPER(education_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(education_level::text)
                 ELSE INITCAP(education_level::text)
             END WHERE education_level IS NOT NULL
-        \"\"\")
+        """)
 
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE users ALTER COLUMN role DROP DEFAULT;")

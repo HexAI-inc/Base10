@@ -77,15 +77,15 @@ def upgrade() -> None:
             op.execute(f"UPDATE {table} SET {col} = 'Cell Biology' WHERE {col}::text = 'Cell_biology'")
 
         # Grade Level normalization
-        op.execute(\"\"\"
+        op.execute("""
             UPDATE classrooms SET grade_level = CASE 
                 WHEN UPPER(grade_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(grade_level::text)
                 ELSE INITCAP(grade_level::text)
             END WHERE grade_level IS NOT NULL
-        \"\"\")
+        """)
 
         # Report Reason normalization
-        op.execute(\"\"\"
+        op.execute("""
             UPDATE question_reports SET reason = CASE 
                 WHEN reason::text = 'WRONG_ANSWER' THEN 'Wrong Answer'
                 WHEN reason::text = 'TYPO' THEN 'Typo'
@@ -94,7 +94,7 @@ def upgrade() -> None:
                 WHEN reason::text = 'OUTDATED_CONTENT' THEN 'Outdated Content'
                 ELSE 'Other'
             END WHERE reason IS NOT NULL
-        \"\"\")
+        """)
 
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE assignments ALTER COLUMN assignment_type DROP DEFAULT;")
