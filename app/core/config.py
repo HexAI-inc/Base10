@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days (offline-first needs longer tokens)
     
     # CORS - Allow web app and mobile app
-    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm"]'
+    BACKEND_CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm", "https://www.base10.gm"]'
     
     @property
     def CORS_ORIGINS(self) -> List[str]:
@@ -27,13 +27,19 @@ class Settings(BaseSettings):
         try:
             if isinstance(self.BACKEND_CORS_ORIGINS, str):
                 origins = json.loads(self.BACKEND_CORS_ORIGINS)
+                # Remove wildcard if it exists (not allowed with credentials)
+                if "*" in origins:
+                    origins.remove("*")
+                    # If only "*" was present, add default origins
+                    if not origins:
+                        origins = ["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm"]
                 # Always allow localhost for development
                 if "http://localhost:3000" not in origins:
                     origins.append("http://localhost:3000")
                 return origins
             return self.BACKEND_CORS_ORIGINS
         except:
-            return ["http://localhost:3000", "http://localhost:5000", "*"]
+            return ["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm", "https://www.base10.gm"]
     
     # SMS (Phase 3)
     TWILIO_ACCOUNT_SID: str = ""
