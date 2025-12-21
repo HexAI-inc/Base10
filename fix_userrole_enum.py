@@ -8,6 +8,7 @@ import os
 import sys
 import psycopg2
 from psycopg2 import sql
+from urllib.parse import urlparse
 
 def fix_userrole_enum():
     """Fix the userrole enum data mismatch."""
@@ -18,31 +19,39 @@ def fix_userrole_enum():
         print("❌ DATABASE_URL environment variable not set")
         sys.exit(1)
 
-    # Parse the database URL
-    # Expected format: postgresql://user:password@host:port/database
+    # Parse the database URL properly
     try:
-        # Simple parsing - you might need to adjust based on your URL format
-        parts = database_url.replace('postgresql://', '').split('@')
-        user_pass = parts[0].split(':')
-        host_db = parts[1].split('/')
+        parsed = urlparse(database_url)
+        
+        user = parsed.username
+        password = parsed.password
+        host = parsed.hostname
+        port = parsed.port or 5432
+        database = parsed.path.lstrip('/')  # Remove leading slash
+        
+        # Handle query parameters (like sslmode)
+        sslmode = None
+        if parsed.query:
+            params = dict(param.split('=') for param in parsed.query.split('&'))
+            sslmode = params.get('sslmode')
 
-        user = user_pass[0]
-        password = user_pass[1]
-        host_port = host_db[0].split(':')
-        host = host_port[0]
-        port = host_port[1] if len(host_port) > 1 else '5432'
-        database = host_db[1]
+        # Connect to database
+        conn_params = {
+            'host': host,
+            'port': port,
+            'database': database,
+            'user': user,
+            'password': password
+        }
+        
+        if sslmode:
+            conn_params['sslmode'] = sslmode
 
-        conn = psycopg2.connect(
-            host=host,
-            port=port,
-            database=database,
-            user=user,
-            password=password
-        )
+        conn = psycopg2.connect(**conn_params)
         conn.autocommit = True
         cursor = conn.cursor()
 
+        print(f"🔧 Connected to database: {database}")
         print("🔧 Fixing userrole enum data mismatch...")
 
         # 1. Convert role column to VARCHAR temporarily
