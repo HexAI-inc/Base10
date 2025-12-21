@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.schemas import UserCreate, UserLogin, UserResponse, Token
 from app.services.onboarding_service import OnboardingService
+from app.models.enums import UserRole
 
 router = APIRouter()
 
@@ -74,7 +75,7 @@ async def register(
         username=user_data.username,
         full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),
-        role=user_data.role or "student",
+        role=user_data.role or UserRole.STUDENT,
         is_active=True,
         is_verified=False  # Will be verified via email/SMS
     )

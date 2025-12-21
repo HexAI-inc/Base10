@@ -6,6 +6,7 @@ from app.models.user import User
 from app.core.security import get_current_user
 from app.schemas import schemas
 from app.services.onboarding_service import OnboardingService
+from app.models.enums import UserRole
 
 router = APIRouter()
 
@@ -27,7 +28,7 @@ async def complete_student_onboarding(
     db: Session = Depends(get_db)
 ):
     """Complete student onboarding."""
-    if current_user.role != "student":
+    if current_user.role != UserRole.STUDENT:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only students can use this endpoint"

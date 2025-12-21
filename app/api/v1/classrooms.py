@@ -217,7 +217,7 @@ async def list_classrooms(db: Session = Depends(get_db), user: User = Depends(ge
             "grade_level": classroom.grade_level,
             "teacher_name": teacher_name,
             "student_count": count,
-            "role": "student",
+            "role": UserRole.STUDENT.value,
             "is_active": classroom.is_active,
             "created_at": classroom.created_at.isoformat()
         })
@@ -633,7 +633,7 @@ async def get_members(classroom_id: int, db: Session = Depends(get_db), user: Us
             "full_name": student.full_name or student.username,
             "username": student.username,
             "email": student.email if is_teacher else None,  # Only teacher sees emails
-            "role": "student",
+            "role": UserRole.STUDENT.value,
             "avatar_url": student.avatar_url,
             "joined_at": join_record.joined_at.isoformat() if join_record else None,
             "submission_count": submission_count,

@@ -20,9 +20,9 @@ def get_welcome_email(user_name: str, user_role: str, verification_url: str) -> 
     """
     # Map role to template file
     template_map = {
-        "student": "welcome-student.html",
-        "teacher": "welcome-teacher.html",
-        "parent": "welcome-parent.html"
+        "STUDENT": "welcome-student.html",
+        "TEACHER": "welcome-teacher.html",
+        "PARENT": "welcome-parent.html"
     }
     
     template_file = template_map.get(user_role.lower(), "welcome-student.html")
