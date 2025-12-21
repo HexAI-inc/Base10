@@ -32,7 +32,7 @@ class Settings(BaseSettings):
                     origins.remove("*")
                     # If only "*" was present, add default origins
                     if not origins:
-                        origins = ["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm"]
+                        origins = ["http://localhost:3000", "http://localhost:5000", "https://stingray-app-x7lzo.ondigitalocean.app", "https://base10.gm", "https://www.base10.gm"]
                 # Always allow localhost for development
                 if "http://localhost:3000" not in origins:
                     origins.append("http://localhost:3000")
