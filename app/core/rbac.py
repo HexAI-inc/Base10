@@ -8,9 +8,9 @@ from app.models.user import User
 # Define role hierarchy
 class UserRole:
     """User role constants."""
-    STUDENT = "STUDENT"
-    TEACHER = "TEACHER"
-    ADMIN = "ADMIN"
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
     
     ALL_ROLES = [STUDENT, TEACHER, ADMIN]
     

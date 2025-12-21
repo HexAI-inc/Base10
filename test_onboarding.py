@@ -27,7 +27,7 @@ def test_student_registration():
         "email": email,
         "password": "TestPass123!",
         "full_name": "Test Student",
-        "role": "STUDENT"
+        "role": "student"
     }
     
     try:

@@ -162,7 +162,7 @@ class OnboardingService:
         Get role-specific onboarding guidance
         """
         guidance = {
-            "STUDENT": """
+            "student": """
 Welcome to Base10! 🎓
 
 Now that your email is verified, here's what to do next:
@@ -230,7 +230,7 @@ Let's support their learning journey! 📚
             """
         }
         
-        return guidance.get(role, guidance["STUDENT"])
+        return guidance.get(role, guidance["student"])
     
     def _format_guidance_html(self, user: User, guidance: str) -> str:
         """
