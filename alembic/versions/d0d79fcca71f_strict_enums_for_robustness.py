@@ -92,6 +92,7 @@ def upgrade() -> None:
         op.execute("ALTER TABLE classrooms ALTER COLUMN grade_level TYPE VARCHAR(20)")
         op.execute("ALTER TABLE question_reports ALTER COLUMN reason TYPE VARCHAR(50)")
         op.execute("ALTER TABLE question_reports ALTER COLUMN status TYPE VARCHAR(20)")
+        op.execute("ALTER TABLE users ALTER COLUMN education_level TYPE VARCHAR(50) USING education_level::text")
 
         # Normalize data in tables before casting
         # Subject normalization
@@ -144,12 +145,14 @@ def upgrade() -> None:
         op.execute("""
             UPDATE users SET education_level = CASE 
                 WHEN UPPER(education_level::text) IN ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3') THEN UPPER(education_level::text)
+                WHEN UPPER(education_level::text) IN ('SSS3', 'SS3') THEN 'SS3'  -- Handle variations
                 WHEN education_level::text = 'Sss3' THEN 'SS3'  -- Handle typo
                 WHEN education_level::text ILIKE 'grade%10%' THEN 'Grade 10'
                 WHEN education_level::text ILIKE 'grade%11%' THEN 'Grade 11'
                 WHEN education_level::text ILIKE 'grade%12%' THEN 'Grade 12'
                 WHEN UPPER(education_level::text) = 'UNIVERSITY' THEN 'University'
-                ELSE INITCAP(education_level::text)
+                WHEN UPPER(education_level::text) = 'OTHER' THEN 'Other'
+                ELSE INITCAP(TRIM(education_level::text))
             END WHERE education_level IS NOT NULL
         """)
 
