@@ -1,11 +1,12 @@
-# Progress (Updated: 2025-12-14)
+# Progress (Updated: 2025-12-21)
 
 ## Done
 
-- Create and run seeding scripts for Chemistry topics (5 topics × 12 questions = 60 questions)
-- Create and run seeding scripts for Biology topics (5 topics × 12 questions = 60 questions)
-- Verify final database has 600+ questions with balanced topic coverage
-- Achieve comprehensive WAEC question database with 501 questions across all 40 topics (15+ per topic)
+- Resolved PostgreSQL migration errors for strict enum enforcement
+- Fixed application startup issues with import errors and schema references
+- Fixed login endpoint failure due to user role enum value mismatch
+- Successfully applied userrole enum recreation and data normalization
+- Verified login functionality works for both admin and student roles
 
 ## Doing
 

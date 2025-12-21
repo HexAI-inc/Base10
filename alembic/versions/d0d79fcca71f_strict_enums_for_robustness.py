@@ -23,7 +23,7 @@ def upgrade() -> None:
     # Create Enum types for PostgreSQL
     if op.get_bind().dialect.name == 'postgresql':
         # Rename existing types to avoid conflicts with new Title Case definitions
-        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus', 'reportreason']:
+        for type_name in ['subject', 'topic', 'difficultylevel', 'gradelevel', 'assignmenttype', 'assignmentstatus', 'posttype', 'reportstatus', 'reportreason', 'userrole']:
             op.execute(f"DO $$ BEGIN ALTER TYPE {type_name} RENAME TO {type_name}_old; EXCEPTION WHEN undefined_object THEN null; END $$;")
         
         # Create new types with correct casing
@@ -81,6 +81,7 @@ def upgrade() -> None:
         op.execute("CREATE TYPE reportstatus AS ENUM ('pending', 'reviewed', 'fixed', 'dismissed');")
         op.execute("CREATE TYPE gradelevel AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Grade 10', 'Grade 11', 'Grade 12', 'University', 'Other');")
         op.execute("CREATE TYPE reportreason AS ENUM ('Wrong Answer', 'Typo', 'Unclear Question', 'Missing Diagram', 'Outdated Content', 'Other');")
+        op.execute("CREATE TYPE userrole AS ENUM ('student', 'teacher', 'admin', 'moderator');")
 
         # Convert columns to VARCHAR temporarily to allow any string value during normalization
         for table, col in [('assignments', 'subject_filter'), ('classrooms', 'subject'), ('flashcard_decks', 'subject'), ('questions', 'subject')]:
@@ -93,6 +94,7 @@ def upgrade() -> None:
         op.execute("ALTER TABLE question_reports ALTER COLUMN reason TYPE VARCHAR(50)")
         op.execute("ALTER TABLE question_reports ALTER COLUMN status TYPE VARCHAR(20)")
         op.execute("ALTER TABLE users ALTER COLUMN education_level TYPE VARCHAR(50) USING education_level::text")
+        op.execute("ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(20) USING role::text")
 
         # Normalize data in tables before casting
         # Subject normalization
@@ -154,6 +156,17 @@ def upgrade() -> None:
                 WHEN UPPER(education_level::text) = 'OTHER' THEN 'Other'
                 ELSE INITCAP(TRIM(education_level::text))
             END WHERE education_level IS NOT NULL
+        """)
+
+        # User Role normalization
+        op.execute("""
+            UPDATE users SET role = CASE 
+                WHEN LOWER(role::text) = 'student' THEN 'student'
+                WHEN LOWER(role::text) = 'teacher' THEN 'teacher'
+                WHEN LOWER(role::text) = 'admin' THEN 'admin'
+                WHEN LOWER(role::text) = 'moderator' THEN 'moderator'
+                ELSE 'student'
+            END WHERE role IS NOT NULL
         """)
 
         # Report Reason normalization
@@ -349,6 +362,8 @@ def upgrade() -> None:
                nullable=True,
                existing_server_default=sa.text("'0'"))
         batch_op.alter_column('education_level', existing_type=sa.VARCHAR(length=50), type_=sa.Enum('JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Grade 10', 'Grade 11', 'Grade 12', 'University', 'Other', name='gradelevel'), postgresql_using='education_level::gradelevel',
+               existing_nullable=True)
+        batch_op.alter_column('role', existing_type=sa.VARCHAR(length=20), type_=sa.Enum('student', 'teacher', 'admin', 'moderator', name='userrole'), postgresql_using='role::userrole',
                existing_nullable=True)
         
         # Check existing constraints before dropping
