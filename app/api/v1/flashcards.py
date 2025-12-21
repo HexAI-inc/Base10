@@ -84,13 +84,13 @@ async def get_flashcard_decks(
             subject=deck.subject,
             difficulty=deck.difficulty,
             card_count=len(cards),
-            cards=[CardSchema.from_orm(c) for c in cards]
+            cards=[FlashcardResponse.from_orm(c) for c in cards]
         ))
     
     return result
 
 
-@router.get("/due", response_model=List[CardSchema])
+@router.get("/due", response_model=List[FlashcardResponse])
 async def get_due_flashcards(
     limit: int = Query(20, le=100),
     current_user: User = Depends(get_current_user),
@@ -114,7 +114,7 @@ async def get_due_flashcards(
     card_ids = [r.card_id for r in due_reviews]
     cards = db.query(Flashcard).filter(Flashcard.id.in_(card_ids)).all()
     
-    return [CardSchema.from_orm(c) for c in cards]
+    return [FlashcardResponse.from_orm(c) for c in cards]
 
 
 @router.post("/sync", status_code=200)
