@@ -80,7 +80,7 @@ def get_subjects(db: Session = Depends(get_db), current_user: User = Depends(get
 
 @router.get("/topics/{subject}")
 def get_topics(
-    subject: SubjectEnum,
+    subject: Subject,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -97,9 +97,9 @@ def get_topics(
 
 @router.get("/random/{subject}")
 def get_random_questions(
-    subject: SubjectEnum,
+    subject: Subject,
     count: int = Query(default=10, le=50),
-    difficulty: Optional[DifficultyEnum] = None,
+    difficulty: Optional[DifficultyLevel] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
