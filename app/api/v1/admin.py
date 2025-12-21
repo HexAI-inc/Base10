@@ -21,6 +21,7 @@ from app.models.classroom import Classroom, Assignment
 from app.models.report import QuestionReport, ReportReason
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
 from app.core.security import get_current_user
+from app.schemas.schemas import UserUpdateAdmin
 
 router = APIRouter()
 
@@ -804,7 +805,7 @@ async def deactivate_user(
 @router.put("/users/{user_id}")
 async def update_user_details(
     user_id: int,
-    data: schemas.UserUpdateAdmin,
+    data: UserUpdateAdmin,
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user)
 ):
