@@ -255,7 +255,7 @@ class SyncPullRequest(BaseModel):
     last_sync_timestamp: Optional[datetime] = None  # Delta sync: only get changes since this time
     subjects: Optional[List[str]] = None  # Filter by subjects
     limit: int = Field(default=200, le=500)  # Mobile storage constraint
-    subjects: Optional[List[SubjectEnum]] = None
+    subjects: Optional[List[Subject]] = None
     limit: int = Field(default=50, le=200)  # Max 200 questions per sync
 
 
