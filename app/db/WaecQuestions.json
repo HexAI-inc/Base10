@@ -498,9 +498,7 @@
     "difficulty": "DifficultyLevel.MEDIUM",
     "explanation": "Market gardening produces perishable items like vegetables and fruits, which need to be close to the market (cities) to prevent spoilage during transport.",
     "exam_year": "WASSCE 2015"
-  }
-]
-[
+  },
   {
     "subject": "Subject.GOVERNMENT",
     "topic": "Basic Concepts of Government",
@@ -1000,9 +998,7 @@
     "difficulty": "DifficultyLevel.MEDIUM",
     "explanation": "The Treaty of Lagos, establishing ECOWAS, was signed on May 28, 1975.",
     "exam_year": "WASSCE 2017"
-  }
-]
-[
+  },
   {
     "subject": "Subject.MATHEMATICS",
     "topic": "Approximation",
@@ -1382,9 +1378,7 @@
     "difficulty": "DifficultyLevel.MEDIUM",
     "explanation": "Observing the vertex of the parabola on the grid, the y-coordinate is the minimum value. It lies midway between -2 and -3, best estimated as -2.5.",
     "exam_year": "WASSCE 2017"
-  }
-]
-[
+  },
   {
     "subject": "Subject.BIOLOGY",
     "topic": "Respiration",
@@ -1994,9 +1988,7 @@
     "difficulty": "DifficultyLevel.EASY",
     "explanation": "Chromosomes are located within the nucleus of eukaryotic cells, not in the cytoplasm.",
     "exam_year": "WASSCE 2011"
-  }
-]
-[
+  },
   {
     "subject": "Subject.PHYSICS",
     "topic": "Capillarity",
@@ -2506,9 +2498,7 @@
     "difficulty": "DifficultyLevel.EASY",
     "explanation": "This is the definition of Heisenberg's Uncertainty Principle.",
     "exam_year": "WASSCE 2011"
-  }
-]
-[
+  },
   {
     "subject": "Subject.CIVIC_EDUCATION",
     "topic": "Values",
@@ -3018,9 +3008,7 @@
     "difficulty": "DifficultyLevel.EASY",
     "explanation": "Ade's apathy stems from a belief that democracy yields no dividends. If leaders fulfill promises and show results, trust is restored, encouraging participation.",
     "exam_year": "WASSCE 2015"
-  }
-]
-[
+  },
   {
     "subject": "Subject.GOVERNMENT",
     "topic": "Basic Concepts of Government",
@@ -3520,9 +3508,7 @@
     "difficulty": "DifficultyLevel.MEDIUM",
     "explanation": "The UNO was formed by the Allied powers of WWII (USA, UK, USSR, etc.). Germany was an Axis power and not a founding member instrumental to its formation.",
     "exam_year": "WASSCE 2016"
-  }
-]
-[
+  },
   {
     "subject": "Subject.FINANCIAL_ACCOUNTING",
     "topic": "Accounting Process",

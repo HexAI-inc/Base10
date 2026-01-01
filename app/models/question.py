@@ -21,7 +21,7 @@ class Question(Base):
     
     # Categorization (indexed for fast filtering)
     subject = Column(SQLEnum(Subject), index=True, nullable=False)
-    topic = Column(SQLEnum(Topic), index=True, nullable=False)  # Strict Enum for topics
+    topic = Column(String, index=True, nullable=False)  # Changed from SQLEnum(Topic) to String
     
     # Question content
     content = Column(Text, nullable=False)  # Supports LaTeX: $x^2 + 3x - 4 = 0$

@@ -58,6 +58,11 @@ class Flashcard(Base):
     image_url = Column(String(500), nullable=True)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
     
+    # Moderation
+    approved = Column(Boolean, default=False)
+    moderator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -11,17 +11,23 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from app.db.session import SessionLocal
-from app.models.question import Question, Subject, DifficultyLevel
+from app.models.question import Question, Subject, DifficultyLevel, Topic
 
 
 def parse_enum_value(enum_string: str, enum_class):
     """
     Parse enum string like 'Subject.GEOGRAPHY' to actual enum value.
+    For topics, return the string directly since we changed the model to use String.
     """
     if '.' in enum_string:
         # Extract the enum member name (e.g., 'GEOGRAPHY' from 'Subject.GEOGRAPHY')
         enum_member = enum_string.split('.')[-1]
         return enum_class[enum_member]
+    
+    # Handle topic strings - return as string since model now uses String
+    if enum_class == Topic:
+        return enum_string
+    
     return enum_class(enum_string)
 
 
@@ -87,6 +93,7 @@ def load_questions_from_json(json_file_path: str):
                 # Parse enums
                 subject = parse_enum_value(q_data['subject'], Subject)
                 difficulty = parse_enum_value(q_data['difficulty'], DifficultyLevel)
+                topic = parse_enum_value(q_data['topic'], Topic)
                 
                 # Check if question already exists (by content and subject)
                 existing = db.query(Question).filter(
@@ -101,7 +108,7 @@ def load_questions_from_json(json_file_path: str):
                 # Create question
                 question = Question(
                     subject=subject,
-                    topic=q_data['topic'],
+                    topic=topic,
                     content=q_data['content'],
                     options_json=q_data['options_json'],
                     correct_index=q_data['correct_index'],

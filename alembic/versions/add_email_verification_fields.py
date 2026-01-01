@@ -17,63 +17,64 @@ depends_on = None
 
 
 def upgrade():
-    # Add columns directly - Alembic handles "already exists" errors gracefully
-    # SQLite and PostgreSQL handle this differently
+    # Get connection and check if columns exist
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [col['name'] for col in inspector.get_columns('users')]
     
-    try:
+    # Add verification_token if it doesn't exist
+    if 'verification_token' not in existing_columns:
         op.add_column('users', sa.Column('verification_token', sa.String(length=255), nullable=True))
         print("✅ Added verification_token column")
-    except Exception as e:
-        print(f"⏭️ verification_token: {e}")
+    else:
+        print("⏭️ verification_token column already exists, skipping")
     
-    try:
+    # Add verification_token_expires if it doesn't exist
+    if 'verification_token_expires' not in existing_columns:
         op.add_column('users', sa.Column('verification_token_expires', sa.DateTime(timezone=True), nullable=True))
         print("✅ Added verification_token_expires column")
-    except Exception as e:
-        print(f"⏭️ verification_token_expires: {e}")
+    else:
+        print("⏭️ verification_token_expires column already exists, skipping")
     
-    try:
+    # Add verified_at if it doesn't exist
+    if 'verified_at' not in existing_columns:
         op.add_column('users', sa.Column('verified_at', sa.DateTime(timezone=True), nullable=True))
         print("✅ Added verified_at column")
-    except Exception as e:
-        print(f"⏭️ verified_at: {e}")
+    else:
+        print("⏭️ verified_at column already exists, skipping")
     
-    try:
+    # Add role if it doesn't exist (for onboarding flows)
+    if 'role' not in existing_columns:
         op.add_column('users', sa.Column('role', sa.String(length=50), nullable=True, server_default='student'))
         print("✅ Added role column")
-    except Exception as e:
-        print(f"⏭️ role: {e}")
+    else:
+        print("⏭️ role column already exists, skipping")
     
-    try:
+    # Add username if it doesn't exist
+    if 'username' not in existing_columns:
         op.add_column('users', sa.Column('username', sa.String(length=100), nullable=True, unique=True))
         print("✅ Added username column")
-    except Exception as e:
-        print(f"⏭️ username: {e}")
+    else:
+        print("⏭️ username column already exists, skipping")
 
 
 def downgrade():
-    # Drop columns if they exist
-    try:
+    # Get connection and check if columns exist
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [col['name'] for col in inspector.get_columns('users')]
+    
+    if 'username' in existing_columns:
         op.drop_column('users', 'username')
-    except Exception:
-        pass
     
-    try:
+    if 'role' in existing_columns:
         op.drop_column('users', 'role')
-    except Exception:
-        pass
     
-    try:
+    if 'verified_at' in existing_columns:
         op.drop_column('users', 'verified_at')
-    except Exception:
-        pass
     
-    try:
+    if 'verification_token_expires' in existing_columns:
         op.drop_column('users', 'verification_token_expires')
-    except Exception:
-        pass
     
-    try:
+    if 'verification_token' in existing_columns:
         op.drop_column('users', 'verification_token')
-    except Exception:
-        pass

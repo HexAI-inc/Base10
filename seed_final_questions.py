@@ -107,11 +107,11 @@ def generate_remaining_questions():
     ]
     questions.extend(grammar_questions)
 
-    # English Literature - needs 12 more (currently 3)
+    # English Comprehension - needs 12 more (currently 3)
     literature_questions = [
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is alliteration?",
             options_json='["Rhyming words", "Repetition of initial sounds", "Long sentences", "Short poems"]',
             correct_index=1,
@@ -121,7 +121,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is onomatopoeia?",
             options_json='["Descriptive language", "Words that imitate sounds", "Rhyming poetry", "Storytelling"]',
             correct_index=1,
@@ -131,7 +131,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a monologue?",
             options_json='["A conversation", "A long speech by one character", "A poem", "A description"]',
             correct_index=1,
@@ -141,7 +141,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is dramatic irony?",
             options_json="[\"When characters know something audience doesn't\", \"When audience knows something characters don't\", \"When no one knows anything\", \"When everyone knows everything\"]",
             correct_index=1,
@@ -151,7 +151,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a motif?",
             options_json='["A main character", "A recurring element or idea", "The setting", "The plot"]',
             correct_index=1,
@@ -161,7 +161,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is blank verse?",
             options_json='["Rhyming poetry", "Unrhymed poetry in iambic pentameter", "Free verse", "Haiku"]',
             correct_index=1,
@@ -171,7 +171,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a foil character?",
             options_json='["A main character", "A character who contrasts with another", "A villain", "A narrator"]',
             correct_index=1,
@@ -181,7 +181,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is assonance?",
             options_json='["Rhyming vowels", "Repetition of vowel sounds", "Consonant repetition", "Sound imitation"]',
             correct_index=1,
@@ -191,7 +191,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a denouement?",
             options_json='["The beginning", "The climax", "The resolution", "The conflict"]',
             correct_index=2,
@@ -201,7 +201,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a round character?",
             options_json='["One-dimensional", "Fully developed with many traits", "Always good", "Always evil"]',
             correct_index=1,
@@ -211,7 +211,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is a flat character?",
             options_json='["Complex and developed", "One-dimensional with few traits", "The protagonist", "The antagonist"]',
             correct_index=1,
@@ -221,7 +221,7 @@ def generate_remaining_questions():
         ),
         Question(
             subject=Subject.ENGLISH,
-            topic="Literature",
+            topic="COMPREHENSION",
             content="What is catharsis?",
             options_json='["Building tension", "Emotional release", "Character development", "Plot resolution"]',
             correct_index=1,
@@ -898,4 +898,4 @@ def seed_final_questions():
 
 if __name__ == "__main__":
     count = seed_final_questions()
-    print(f"\n🚀 Added {count} final questions for complete WAEC coverage!")
+    print(f"\n🚀 Added {count} final questions for complete WAEC coverage!")# test comment

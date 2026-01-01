@@ -99,6 +99,13 @@ class DashboardStats(BaseModel):
     due_reviews: int
     today_attempts: int
     has_target_exam: bool
+    overview: Dict[str, Any]
+    performance_trends: Dict[str, Any]
+    topic_mastery: List[Dict[str, Any]]
+    exam_readiness: Dict[str, Any]
+    recommendations: List[Dict[str, Any]]
+    time_analytics: Dict[str, Any]
+    classmate_comparison: Dict[str, Any]
 
 
 # ============= Onboarding Schemas =============
@@ -309,13 +316,104 @@ class BroadcastRequest(BaseModel):
     filter_device: Optional[str] = None
 
 
+# ============= Admin Profile Schemas =============
+
+class AdminNotificationSettings(BaseModel):
+    """Admin notification preferences."""
+    email_enabled: bool = True
+    system_alerts: bool = True  # Critical system issues
+    user_reports: bool = True  # Content moderation reports
+    new_registrations: bool = False  # Daily digest of new users
+    performance_alerts: bool = True  # Performance degradation
+    security_alerts: bool = True  # Suspicious activity
+
+
+class AdminPreferences(BaseModel):
+    """Admin dashboard preferences."""
+    theme: str = "light"  # "light" or "dark"
+    default_view: str = "dashboard"  # Default page on login
+    items_per_page: int = 25  # Pagination size
+    auto_refresh_interval: int = 60  # Seconds, 0 = disabled
+    show_advanced_metrics: bool = True
+    timezone: str = "UTC"
+
+
+class AdminProfileResponse(BaseModel):
+    """Admin profile response with system-specific fields."""
+    id: int
+    email: Optional[str]
+    phone_number: Optional[str]
+    username: Optional[str]
+    full_name: Optional[str]
+    role: UserRole
+    avatar_url: Optional[str]
+    bio: Optional[str]
+    
+    # Admin-specific fields
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    last_login: Optional[datetime]
+    
+    # Settings
+    notification_settings: Optional[AdminNotificationSettings]
+    preferences: Optional[AdminPreferences]
+    
+    # Permissions & access
+    total_actions_performed: int = 0  # Count of admin actions
+    last_action_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+
+class AdminProfileUpdate(BaseModel):
+    """Schema for updating admin profile."""
+    full_name: Optional[str] = Field(None, min_length=2, max_length=100)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=500)
+
+
+class AdminSettingsUpdate(BaseModel):
+    """Schema for updating admin settings."""
+    notification_settings: Optional[AdminNotificationSettings] = None
+    preferences: Optional[AdminPreferences] = None
+
+
+class AdminActivityLog(BaseModel):
+    """Admin activity log entry."""
+    id: int
+    admin_id: int
+    admin_name: str
+    action_type: str  # "user_update", "content_moderation", "system_config", etc.
+    action_description: str
+    target_type: Optional[str] = None  # "user", "question", "classroom", etc.
+    target_id: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None  # Additional context
+    ip_address: Optional[str] = None
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class AdminActivityResponse(BaseModel):
+    """Response for admin activity logs."""
+    activities: List[AdminActivityLog]
+    total: int
+    page: int
+    page_size: int
+
+
 # ============= Statistics Schemas =============
 
 class SubjectStats(BaseModel):
     """Statistics for a specific subject."""
-    subject: str
+    subject_name: str
     total_attempts: int
-    correct_attempts: int
     accuracy: float
     mastery_level: str
     top_topics: List[str]
@@ -414,3 +512,105 @@ class FlashcardDeckResponse(FlashcardDeckBase):
     
     class Config:
         from_attributes = True
+
+
+# ============= Teacher AI Assistant Schemas =============
+
+class TeacherAIRequest(BaseModel):
+    """Request for teacher AI assistant."""
+    message: str = Field(..., min_length=3, max_length=2000, description="Teacher's natural language command")
+    classroom_id: Optional[int] = Field(None, description="Optional classroom context")
+    context: Optional[Dict[str, Any]] = Field(None, description="Additional context")
+
+
+class QuizQuestion(BaseModel):
+    """Generated quiz question."""
+    id: int
+    content: str
+    options: List[str]
+    correct_index: int
+    explanation: Optional[str]
+    subject: Optional[str]
+    topic: Optional[str]
+    difficulty: Optional[str]
+
+
+class QuizDraft(BaseModel):
+    """Draft quiz for teacher review."""
+    questions: List[QuizQuestion]
+    total_found: int
+    requested: int
+    source: str = "database"
+    parameters: Dict[str, Any]
+
+
+class PerformanceAnalysis(BaseModel):
+    """Classroom performance analysis."""
+    classroom_name: str
+    time_period: str
+    total_students: int
+    active_students: int
+    total_attempts: int
+    accuracy: float
+    avg_time_seconds: Optional[float]
+    guessing_rate: float
+    struggle_rate: float
+    insights: List[str]
+
+
+class StrugglingStudent(BaseModel):
+    """Student who needs help."""
+    student_id: int
+    student_name: str
+    accuracy: float
+    total_attempts: int
+    misconception_rate: float
+    needs_help_with: str
+
+
+class StrugglingStudentsReport(BaseModel):
+    """Report of struggling students."""
+    classroom_name: str
+    total_students: int
+    struggling_count: int
+    students: List[StrugglingStudent]
+    recommendations: List[str]
+
+
+class ClassroomReport(BaseModel):
+    """Comprehensive classroom report."""
+    summary: str
+    performance_metrics: PerformanceAnalysis
+    struggling_students: StrugglingStudentsReport
+    generated_at: str
+
+
+class TeacherAIResponse(BaseModel):
+    """Response from teacher AI assistant."""
+    intent: Optional[str] = None
+    confidence: Optional[float] = None
+    parameters: Optional[Dict[str, Any]] = None
+    action_summary: Optional[str] = None
+    requires_approval: bool = False
+    questions_to_clarify: List[str] = []
+    
+    # Intent-specific data
+    quiz_data: Optional[QuizDraft] = None
+    analysis: Optional[PerformanceAnalysis] = None
+    struggling_students: Optional[StrugglingStudentsReport] = None
+    report: Optional[ClassroomReport] = None
+    
+    # Error handling
+    error: Optional[str] = None
+    message: Optional[str] = None
+    raw_response: Optional[str] = None
+
+
+class ApproveQuizRequest(BaseModel):
+    """Request to approve and send quiz to students."""
+    question_ids: List[int] = Field(..., min_items=1, description="Selected question IDs")
+    classroom_id: int = Field(..., description="Classroom to send quiz to")
+    title: str = Field(..., min_length=3, max_length=200, description="Quiz title")
+    description: Optional[str] = Field(None, description="Quiz description")
+    due_date: Optional[datetime] = Field(None, description="Due date")
+    points_per_question: int = Field(default=10, ge=1, le=100, description="Points for each correct answer")

@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str
+    POSTGRES_USER: str = "base10"
+    POSTGRES_PASSWORD: str = "base10_password"
+    POSTGRES_DB: str = "base10_db"
     
     # Security
     SECRET_KEY: str
@@ -79,7 +82,7 @@ class Settings(BaseSettings):
     
     # AI
     GOOGLE_API_KEY: str = ""
-    AI_MODEL_NAME: str = "gemma-12b"
+    AI_MODEL_NAME: str = "gemini-pro"
     
     # Environment
     ENVIRONMENT: str = "development"

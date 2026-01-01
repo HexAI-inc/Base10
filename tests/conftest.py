@@ -94,7 +94,8 @@ def test_teacher(test_db):
         full_name="Test Teacher",
         hashed_password=get_password_hash("teacherpass123"),
         is_active=True,
-        is_verified=True
+        is_verified=True,
+        role=UserRole.TEACHER  # Set role to teacher
     )
     test_db.add(teacher)
     test_db.commit()

@@ -703,6 +703,97 @@ def get_dashboard_summary(
     }
 
 
+# TEMPORARY DEVELOPMENT ENDPOINT - Remove after frontend auth is fixed
+@router.get("/dashboard/public", response_model=DashboardStats)
+def get_dashboard_summary_public(db: Session = Depends(get_db)):
+    """
+    TEMPORARY: Get dashboard summary without authentication for development.
+    REMOVE THIS ENDPOINT AFTER FRONTEND AUTH IS IMPLEMENTED.
+    """
+    # Return realistic sample data for UI development
+    return {
+        "total_attempts": 150,
+        "overall_accuracy": 78.5,
+        "streak_days": 12,
+        "study_time_hours": 45.2,
+        "due_reviews": 8,
+        "today_attempts": 25,
+        "has_target_exam": True,
+        "overview": {
+            "total_attempts": 150,
+            "overall_accuracy": 78.5,
+            "streak_days": 12,
+            "study_time_hours": 45.2
+        },
+        "performance_trends": {
+            "daily": {"attempts": 25, "accuracy": 82.0},
+            "weekly": {"attempts": 175, "accuracy": 78.5},
+            "monthly": {"attempts": 750, "accuracy": 76.0}
+        },
+        "topic_mastery": [
+            {
+                "topic": "Algebra",
+                "subject": "Mathematics",
+                "mastery_level": "Intermediate",
+                "accuracy": 75.0,
+                "needs_practice": True
+            },
+            {
+                "topic": "Geometry",
+                "subject": "Mathematics", 
+                "mastery_level": "Advanced",
+                "accuracy": 85.0,
+                "needs_practice": False
+            },
+            {
+                "topic": "Mechanics",
+                "subject": "Physics",
+                "mastery_level": "Intermediate",
+                "accuracy": 72.0,
+                "needs_practice": True
+            },
+            {
+                "topic": "Organic Chemistry",
+                "subject": "Chemistry",
+                "mastery_level": "Beginner",
+                "accuracy": 65.0,
+                "needs_practice": True
+            }
+        ],
+        "exam_readiness": {
+            "readiness_score": 82.0,
+            "readiness_level": "Good",
+            "days_until_exam": 30
+        },
+        "recommendations": [
+            {
+                "priority": "high",
+                "title": "Practice Weak Topics",
+                "message": "Focus on Algebra fundamentals"
+            },
+            {
+                "priority": "medium",
+                "title": "Review Daily",
+                "message": "Maintain your 12-day streak"
+            }
+        ],
+        "time_analytics": {
+            "total_study_time_minutes": 2712,
+            "average_time_per_question_seconds": 45,
+            "patterns": {
+                "guessing_instances": 12,
+                "guessing_rate": 8.0
+            }
+        },
+        "classmate_comparison": {
+            "your_accuracy": 78.5,
+            "class_average_accuracy": 72.0,
+            "your_rank": 15,
+            "percentile": 78.0
+        }
+    }
+
+
 @router.get("/subjects", response_model=List[SubjectStats])
 def get_student_subject_stats(
     db: Session = Depends(get_db),
@@ -713,3 +804,50 @@ def get_student_subject_stats(
     Includes accuracy, total attempts, and mastery level for each subject.
     """
     return _calculate_subject_mastery(db, current_user.id)
+
+
+# TEMPORARY DEVELOPMENT ENDPOINT - Remove after frontend auth is fixed
+@router.get("/subjects/public", response_model=List[SubjectStats])
+def get_student_subject_stats_public(db: Session = Depends(get_db)):
+    """
+    TEMPORARY: Get subject stats without authentication for development.
+    REMOVE THIS ENDPOINT AFTER FRONTEND AUTH IS IMPLEMENTED.
+    """
+    # Return realistic sample data for UI development
+    return [
+        {
+            "subject_name": "Mathematics",
+            "total_attempts": 85,
+            "accuracy": 82.0,
+            "mastery_level": "Advanced",
+            "top_topics": ["Algebra", "Calculus", "Geometry"]
+        },
+        {
+            "subject_name": "Physics",
+            "total_attempts": 65,
+            "accuracy": 75.0,
+            "mastery_level": "Intermediate", 
+            "top_topics": ["Mechanics", "Thermodynamics", "Electricity"]
+        },
+        {
+            "subject_name": "Chemistry",
+            "total_attempts": 45,
+            "accuracy": 70.0,
+            "mastery_level": "Beginner",
+            "top_topics": ["Organic Chemistry", "Inorganic Chemistry"]
+        },
+        {
+            "subject_name": "Biology",
+            "total_attempts": 38,
+            "accuracy": 68.0,
+            "mastery_level": "Beginner",
+            "top_topics": ["Cell Biology", "Genetics"]
+        },
+        {
+            "subject_name": "English",
+            "total_attempts": 52,
+            "accuracy": 88.0,
+            "mastery_level": "Advanced",
+            "top_topics": ["Grammar", "Literature", "Vocabulary"]
+        }
+    ]

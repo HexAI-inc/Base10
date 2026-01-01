@@ -163,6 +163,128 @@ Keep it under 150 words. Be encouraging!"""
         )
 
 
+async def generate_comprehensive_explanation(question: Question) -> str:
+    """
+    Generate a comprehensive explanation for any question.
+    
+    Provides detailed teaching explanation regardless of student performance.
+    Used for learning purposes, not just correcting wrong answers.
+    """
+    if not GEMINI_AVAILABLE or not model:
+        return question.explanation or "No detailed explanation available for this question."
+    
+    # Parse options
+    import json
+    options = json.loads(question.options_json)
+    options_text = "\n".join([
+        f"{chr(65 + i)}) {opt}"
+        for i, opt in enumerate(options)
+    ])
+    
+    prompt = f"""You are an expert WAEC tutor providing a comprehensive explanation for this question.
+
+Question: {question.content}
+
+Options:
+{options_text}
+
+Correct Answer: {chr(65 + question.correct_index)}
+
+Provide a detailed, step-by-step explanation that:
+1. Explains the key concepts involved
+2. Shows the correct approach to solving this type of problem
+3. Includes relevant formulas, principles, or methods
+4. Uses clear, simple language appropriate for WAEC exam preparation
+5. Gives examples or analogies where helpful
+
+This is for learning purposes - make it educational and thorough.
+
+Keep it under 300 words but be comprehensive."""
+
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        return question.explanation or f"Detailed explanation temporarily unavailable. The correct answer is {chr(65 + question.correct_index)}."
+
+
+async def generate_flashcard_deck(
+    subject: str,
+    topic: str,
+    difficulty: str = "medium",
+    count: int = 10
+) -> List[Dict[str, str]]:
+    """
+    Generate a deck of flashcards using AI.
+    
+    Args:
+        subject: Subject area (MATHEMATICS, CHEMISTRY, etc.)
+        topic: Specific topic within the subject
+        difficulty: Difficulty level (easy, medium, hard)
+        count: Number of flashcards to generate
+    
+    Returns:
+        List of flashcard dictionaries with 'front' and 'back' keys
+    """
+    if not GEMINI_AVAILABLE or not model:
+        raise Exception("AI service not available")
+    
+    # Validate inputs
+    count = max(5, min(count, 20))
+    difficulty = difficulty.lower() if difficulty.lower() in ['easy', 'medium', 'hard'] else 'medium'
+    
+    prompt = f"""Generate {count} high-quality flashcards for {subject} - {topic}.
+
+Requirements:
+- Each flashcard must have a clear QUESTION (front) and ANSWER (back)
+- Questions should be {difficulty} level for WAEC exam preparation
+- Focus on key concepts, definitions, formulas, and important facts
+- Use proper LaTeX formatting for math: $formula$ for inline, $$formula$$ for display
+- Make questions educational and exam-relevant
+- Answers should be comprehensive but concise
+
+Format your response as a JSON array of objects:
+[
+    {{
+        "front": "What is the formula for...?",
+        "back": "The formula is $E = mc^2$ which represents..."
+    }},
+    {{
+        "front": "Define photosynthesis",
+        "back": "Photosynthesis is the process by which plants..."
+    }}
+]
+
+Generate exactly {count} flashcards. Make them suitable for spaced repetition learning."""
+
+    try:
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Remove markdown code blocks if present
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+        
+        # Parse JSON
+        flashcards = json.loads(response_text)
+        
+        # Validate structure
+        if not isinstance(flashcards, list) or len(flashcards) == 0:
+            raise ValueError("Invalid flashcard format: expected non-empty array")
+        
+        # Ensure each card has front and back
+        for i, card in enumerate(flashcards):
+            if not isinstance(card, dict) or 'front' not in card or 'back' not in card:
+                raise ValueError(f"Invalid flashcard at index {i}: missing front or back")
+        
+        return flashcards[:count]  # Ensure we don't exceed requested count
+    
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse AI response as JSON: {e}")
+    except Exception as e:
+        raise Exception(f"Failed to generate flashcards: {e}")
+
+
 async def chat_with_ai(
     message: str,
     history: List[ChatMessage],

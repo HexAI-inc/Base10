@@ -21,9 +21,21 @@ from app.models.classroom import Classroom, Assignment
 from app.models.report import QuestionReport, ReportReason
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
 from app.core.security import get_current_user
-from app.schemas.schemas import UserUpdateAdmin
+from app.schemas.schemas import (
+    UserUpdateAdmin,
+    AdminProfileResponse,
+    AdminProfileUpdate,
+    AdminSettingsUpdate,
+    AdminNotificationSettings,
+    AdminPreferences,
+    AdminActivityLog,
+    AdminActivityResponse
+)
 
 router = APIRouter()
+
+
+# ============= Auth & Permissions =============
 
 
 # ============= Auth & Permissions =============
@@ -1080,4 +1092,272 @@ async def delete_user(
         "user_identifier": user_identifier,
         "deleted_by": admin.email
     }
+
+
+# ============= Admin Profile & Settings =============
+
+@router.get("/profile", response_model=AdminProfileResponse)
+async def get_admin_profile(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get admin's own profile with settings.
+    
+    Returns admin-specific profile information including:
+    - Basic profile data (email, name, avatar)
+    - Notification preferences
+    - Dashboard preferences
+    - Activity statistics
+    """
+    import json
+    
+    # Parse notification settings
+    notification_settings = AdminNotificationSettings()
+    if admin.notification_settings:
+        try:
+            settings_data = json.loads(admin.notification_settings)
+            notification_settings = AdminNotificationSettings(**settings_data)
+        except:
+            pass
+    
+    # Parse admin preferences from privacy_settings (we'll reuse this field for admin prefs)
+    preferences = AdminPreferences()
+    if admin.privacy_settings:
+        try:
+            prefs_data = json.loads(admin.privacy_settings)
+            preferences = AdminPreferences(**prefs_data)
+        except:
+            pass
+    
+    # Count admin actions (we'll implement activity tracking later)
+    # For now, return 0
+    total_actions = 0
+    last_action_at = None
+    
+    return AdminProfileResponse(
+        id=admin.id,
+        email=admin.email,
+        phone_number=admin.phone_number,
+        username=admin.username,
+        full_name=admin.full_name,
+        role=admin.role,
+        avatar_url=admin.avatar_url,
+        bio=admin.bio,
+        is_active=admin.is_active,
+        is_verified=admin.is_verified,
+        created_at=admin.created_at,
+        last_login=admin.last_login,
+        notification_settings=notification_settings,
+        preferences=preferences,
+        total_actions_performed=total_actions,
+        last_action_at=last_action_at
+    )
+
+
+@router.patch("/profile", response_model=AdminProfileResponse)
+async def update_admin_profile(
+    updates: AdminProfileUpdate,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update admin's profile information.
+    
+    Allows updating:
+    - Full name
+    - Username
+    - Email
+    - Phone number
+    - Avatar URL
+    - Bio
+    
+    Note: Cannot change role or permissions.
+    """
+    import json
+    
+    # Update fields if provided
+    if updates.full_name is not None:
+        admin.full_name = updates.full_name
+    
+    if updates.username is not None:
+        # Check if username is already taken
+        existing = db.query(User).filter(
+            User.username == updates.username,
+            User.id != admin.id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+        admin.username = updates.username
+    
+    if updates.email is not None:
+        # Check if email is already taken
+        existing = db.query(User).filter(
+            User.email == updates.email,
+            User.id != admin.id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        admin.email = updates.email
+    
+    if updates.phone_number is not None:
+        # Check if phone is already taken
+        existing = db.query(User).filter(
+            User.phone_number == updates.phone_number,
+            User.id != admin.id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number already registered"
+            )
+        admin.phone_number = updates.phone_number
+    
+    if updates.avatar_url is not None:
+        admin.avatar_url = updates.avatar_url
+    
+    if updates.bio is not None:
+        admin.bio = updates.bio
+    
+    db.commit()
+    db.refresh(admin)
+    
+    # Parse settings for response
+    notification_settings = AdminNotificationSettings()
+    if admin.notification_settings:
+        try:
+            settings_data = json.loads(admin.notification_settings)
+            notification_settings = AdminNotificationSettings(**settings_data)
+        except:
+            pass
+    
+    preferences = AdminPreferences()
+    if admin.privacy_settings:
+        try:
+            prefs_data = json.loads(admin.privacy_settings)
+            preferences = AdminPreferences(**prefs_data)
+        except:
+            pass
+    
+    return AdminProfileResponse(
+        id=admin.id,
+        email=admin.email,
+        phone_number=admin.phone_number,
+        username=admin.username,
+        full_name=admin.full_name,
+        role=admin.role,
+        avatar_url=admin.avatar_url,
+        bio=admin.bio,
+        is_active=admin.is_active,
+        is_verified=admin.is_verified,
+        created_at=admin.created_at,
+        last_login=admin.last_login,
+        notification_settings=notification_settings,
+        preferences=preferences,
+        total_actions_performed=0,
+        last_action_at=None
+    )
+
+
+@router.patch("/settings", response_model=AdminProfileResponse)
+async def update_admin_settings(
+    updates: AdminSettingsUpdate,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update admin's notification and dashboard preferences.
+    
+    Allows configuring:
+    - Notification preferences (system alerts, user reports, etc.)
+    - Dashboard preferences (theme, default view, pagination, etc.)
+    
+    These settings control the admin panel experience.
+    """
+    import json
+    
+    # Update notification settings
+    if updates.notification_settings is not None:
+        admin.notification_settings = json.dumps(updates.notification_settings.dict())
+    
+    # Update preferences (stored in privacy_settings field)
+    if updates.preferences is not None:
+        admin.privacy_settings = json.dumps(updates.preferences.dict())
+    
+    db.commit()
+    db.refresh(admin)
+    
+    # Parse settings for response
+    notification_settings = AdminNotificationSettings()
+    if admin.notification_settings:
+        try:
+            settings_data = json.loads(admin.notification_settings)
+            notification_settings = AdminNotificationSettings(**settings_data)
+        except:
+            pass
+    
+    preferences = AdminPreferences()
+    if admin.privacy_settings:
+        try:
+            prefs_data = json.loads(admin.privacy_settings)
+            preferences = AdminPreferences(**prefs_data)
+        except:
+            pass
+    
+    return AdminProfileResponse(
+        id=admin.id,
+        email=admin.email,
+        phone_number=admin.phone_number,
+        username=admin.username,
+        full_name=admin.full_name,
+        role=admin.role,
+        avatar_url=admin.avatar_url,
+        bio=admin.bio,
+        is_active=admin.is_active,
+        is_verified=admin.is_verified,
+        created_at=admin.created_at,
+        last_login=admin.last_login,
+        notification_settings=notification_settings,
+        preferences=preferences,
+        total_actions_performed=0,
+        last_action_at=None
+    )
+
+
+@router.get("/activity")
+async def get_admin_activity(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    action_type: Optional[str] = None
+):
+    """
+    Get admin activity logs.
+    
+    Returns paginated list of actions performed by all admins in the system.
+    Useful for audit trails and tracking system changes.
+    
+    Note: This is a placeholder implementation. For production, you should:
+    1. Create an AdminActivityLog model in the database
+    2. Log admin actions via middleware or decorators
+    3. Query the logs table here
+    
+    Current implementation returns mock data structure.
+    """
+    # TODO: Implement actual activity logging with database table
+    # For now, return empty response with correct structure
+    
+    return AdminActivityResponse(
+        activities=[],
+        total=0,
+        page=page,
+        page_size=page_size
+    )
 

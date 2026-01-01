@@ -6,15 +6,15 @@ services:
     image: postgres:15-alpine
     container_name: base10-db
     environment:
-      POSTGRES_USER: base10
-      POSTGRES_PASSWORD: base10_password
-      POSTGRES_DB: base10_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U base10"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,9 +24,25 @@ services:
     build: .
     container_name: base10-api
     environment:
-      DATABASE_URL: postgresql://base10:base10_password@db:5432/base10_db
-      SECRET_KEY: your-secret-key-change-in-production
-      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      ENVIRONMENT: ${ENVIRONMENT}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      ALGORITHM: ${ALGORITHM}
+      STORAGE_BACKEND: ${STORAGE_BACKEND}
+      SPACES_BUCKET_NAME: ${SPACES_BUCKET_NAME}
+      SPACES_ACCESS_KEY_ID: ${SPACES_ACCESS_KEY_ID}
+      SPACES_SECRET_ACCESS_KEY: ${SPACES_SECRET_ACCESS_KEY}
+      SPACES_REGION: ${SPACES_REGION}
+      SPACES_ENDPOINT_URL: ${SPACES_ENDPOINT_URL}
+      SPACES_CDN_DOMAIN: ${SPACES_CDN_DOMAIN}
+      LOCAL_STORAGE_PATH: ${LOCAL_STORAGE_PATH}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
     ports:
       - "8000:8000"
     depends_on:
@@ -42,7 +58,7 @@ services:
     image: redis:7-alpine
     container_name: base10-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
 

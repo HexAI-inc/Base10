@@ -205,7 +205,7 @@ class CommunicationService:
     def _send_email(self, email: str, subject: str, body: str, html: str = None) -> bool:
         """
         Send email via Resend.
-        
+
         Used for:
         - Password resets (legal requirement)
         - Monthly progress reports (PDF attachment)
@@ -216,28 +216,33 @@ class CommunicationService:
         try:
             import resend
             from app.core.config import settings
-            
+
+            # Check if API key is configured
+            if not settings.RESEND_API_KEY:
+                logger.warning("⚠️ RESEND_API_KEY not configured. Email sending disabled.")
+                return False
+
             # Initialize Resend with API key
             resend.api_key = settings.RESEND_API_KEY
-            
+
             # Send email
             params = {
                 "from": settings.RESEND_FROM_EMAIL,
                 "to": [email],
                 "subject": subject,
             }
-            
+
             # Use HTML if provided, otherwise plain text
             if html:
                 params["html"] = html
             else:
                 params["text"] = body
-            
+
             response = resend.Emails.send(params)
-            
+
             logger.info(f"📧 Email sent successfully to {email}: {subject} (ID: {response.get('id', 'unknown')})")
             return True
-        
+
         except Exception as e:
             logger.error(f"❌ Email failed to {email}: {e}")
             return False

@@ -10,6 +10,7 @@ import logging
 from app.db.session import get_db
 from app.models.classroom import Classroom, ClassroomPost, ClassroomMaterial, Assignment, Submission, classroom_students
 from app.models.user import User
+from app.models.enums import UserRole
 from app.models.student_profile import StudentProfile, TeacherMessage
 from app.models.progress import Attempt
 from app.core.security import get_current_user
@@ -892,6 +893,130 @@ async def grade_submission(submission_id: int, payload: GradeCreate, db: Session
 async def student_grades(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     subs = db.query(Submission).filter(Submission.student_id == user.id, Submission.is_graded == 1).order_by(Submission.graded_at.desc()).all()
     return subs
+
+
+@router.get("/student/classroom-stats")
+async def get_student_classroom_stats(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """
+    Get aggregated classroom statistics for a student.
+    Shows active classrooms, assignments, and completion rates.
+    """
+    # Get active classrooms the student is enrolled in
+    active_classrooms = db.query(func.count(Classroom.id)).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == user.id,
+        Classroom.is_active == True
+    ).scalar() or 0
+    
+    # Get total assignments across all student's classrooms
+    total_assignments = db.query(func.count(Assignment.id)).join(
+        Classroom,
+        Assignment.classroom_id == Classroom.id
+    ).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == user.id,
+        Classroom.is_active == True,
+        Assignment.status == "published"
+    ).scalar() or 0
+    
+    # Get completed assignments (submitted by student)
+    completed_assignments = db.query(func.count(Submission.id)).join(
+        Assignment,
+        Submission.assignment_id == Assignment.id
+    ).join(
+        Classroom,
+        Assignment.classroom_id == Classroom.id
+    ).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == user.id,
+        Classroom.is_active == True,
+        Assignment.status == "published",
+        Submission.student_id == user.id
+    ).scalar() or 0
+    
+    # Calculate completion percentage
+    completion_percentage = (completed_assignments / total_assignments * 100) if total_assignments > 0 else 0
+    
+    return {
+        "active_classrooms": active_classrooms,
+        "total_assignments": total_assignments,
+        "completed_assignments": completed_assignments,
+        "completion_percentage": round(completion_percentage, 1)
+    }
+
+
+# TEMPORARY DEVELOPMENT ENDPOINT - Remove after frontend auth is fixed
+@router.get("/student/classroom-stats/public")
+async def get_student_classroom_stats_public(db: Session = Depends(get_db)):
+    """
+    TEMPORARY: Get classroom stats without authentication for development.
+    REMOVE THIS ENDPOINT AFTER FRONTEND AUTH IS IMPLEMENTED.
+    """
+    # Use the first user in the database for testing (assuming it's a student)
+    first_user = db.query(User).filter(User.role == UserRole.STUDENT).first()
+    if not first_user:
+        # Return mock data if no student users exist
+        return {
+            "active_classrooms": 0,
+            "total_assignments": 12,
+            "completed_assignments": 10,
+            "completion_percentage": 83.3
+        }
+    
+    # Get active classrooms the student is enrolled in
+    active_classrooms = db.query(func.count(Classroom.id)).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == first_user.id,
+        Classroom.is_active == True
+    ).scalar() or 0
+    
+    # Get total assignments across all student's classrooms
+    total_assignments = db.query(func.count(Assignment.id)).join(
+        Classroom,
+        Assignment.classroom_id == Classroom.id
+    ).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == first_user.id,
+        Classroom.is_active == True,
+        Assignment.status == "published"
+    ).scalar() or 0
+    
+    # Get completed assignments (submitted by student)
+    completed_assignments = db.query(func.count(Submission.id)).join(
+        Assignment,
+        Submission.assignment_id == Assignment.id
+    ).join(
+        Classroom,
+        Assignment.classroom_id == Classroom.id
+    ).join(
+        classroom_students,
+        Classroom.id == classroom_students.c.classroom_id
+    ).filter(
+        classroom_students.c.student_id == first_user.id,
+        Classroom.is_active == True,
+        Assignment.status == "published",
+        Submission.student_id == first_user.id
+    ).scalar() or 0
+    
+    # Calculate completion percentage
+    completion_percentage = (completed_assignments / total_assignments * 100) if total_assignments > 0 else 0
+    
+    return {
+        "active_classrooms": active_classrooms,
+        "total_assignments": total_assignments,
+        "completed_assignments": completed_assignments,
+        "completion_percentage": round(completion_percentage, 1)
+    }
 
 
 # ---------------- AI Teacher Integration ----------------

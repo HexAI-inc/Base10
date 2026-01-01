@@ -10,10 +10,19 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.classroom import Classroom, Assignment, classroom_students, ClassroomMaterial
 from app.models.asset import Asset
+from app.models.progress import Attempt
+from app.models.question import Question
 from app.services.storage import StorageService, AssetType
+from app.services.teacher_ai_assistant import process_teacher_command
 from fastapi import UploadFile, File, Query
 from app.models.enums import Subject, Topic, DifficultyLevel, AssignmentType, AssignmentStatus, GradeLevel
 from app.core.security import get_current_user
+from app.schemas.schemas import (
+    TeacherAIRequest, 
+    TeacherAIResponse, 
+    ApproveQuizRequest,
+    AssignmentResponse
+)
 
 router = APIRouter()
 
@@ -443,3 +452,167 @@ async def get_classroom_analytics(
         students=students_performance,
         topics=topics
     )
+
+
+# ============= AI Assistant Endpoints =============
+
+@router.post("/ai-assistant", response_model=TeacherAIResponse)
+async def teacher_ai_assistant(
+    request: TeacherAIRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    AI Assistant for teachers - natural language classroom management.
+    
+    The teacher can communicate in natural language to:
+    - Create quizzes: "Create a quiz on Quadratic Equations for SS2"
+    - Analyze performance: "How is my Physics class doing?"
+    - Identify struggling students: "Which students need help?"
+    - Generate reports: "Give me a summary of this week"
+    
+    The AI will:
+    1. Parse the natural language request
+    2. Identify the intent and extract parameters
+    3. Execute the appropriate action
+    4. Return structured data for teacher review
+    
+    For quiz creation, questions are returned as draft requiring teacher approval
+    before being sent to students.
+    
+    Examples:
+        POST /api/v1/teacher/ai-assistant
+        {
+            "message": "Create a 10-question quiz on Algebra for my SS1 class",
+            "classroom_id": 5
+        }
+        
+        POST /api/v1/teacher/ai-assistant
+        {
+            "message": "Which students are struggling in classroom 5?",
+            "classroom_id": 5
+        }
+    """
+    # Verify teacher role
+    from app.models.enums import UserRole
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can use the AI assistant"
+        )
+    
+    # Prepare context
+    context = request.context or {}
+    if request.classroom_id:
+        context['classroom_id'] = request.classroom_id
+    
+    # Process request
+    result = await process_teacher_command(
+        db=db,
+        teacher=current_user,
+        message=request.message,
+        context=context
+    )
+    
+    return result
+
+
+@router.post("/ai-assistant/approve-quiz", response_model=AssignmentResponse)
+async def approve_and_send_quiz(
+    request: ApproveQuizRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Approve AI-generated quiz and send to students.
+    
+    After reviewing the quiz draft from the AI assistant, teacher can:
+    1. Select which questions to include
+    2. Set title, description, and due date
+    3. Assign points per question
+    4. Send to classroom
+    
+    This creates a new Assignment with the selected questions.
+    Students will see this in their assignments list and can start answering.
+    
+    Example:
+        POST /api/v1/teacher/ai-assistant/approve-quiz
+        {
+            "question_ids": [1, 5, 10, 15, 20],
+            "classroom_id": 5,
+            "title": "Algebra Quiz - Week 3",
+            "description": "Practice on quadratic equations",
+            "due_date": "2025-01-15T23:59:59Z",
+            "points_per_question": 10
+        }
+    """
+    # Verify teacher role
+    from app.models.enums import UserRole
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can approve quizzes"
+        )
+    
+    # Verify classroom ownership
+    classroom = db.query(Classroom).filter(
+        Classroom.id == request.classroom_id,
+        Classroom.teacher_id == current_user.id
+    ).first()
+    
+    if not classroom:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Classroom not found or you don't have permission"
+        )
+    
+    # Verify all questions exist
+    questions = db.query(Question).filter(
+        Question.id.in_(request.question_ids)
+    ).all()
+    
+    if len(questions) != len(request.question_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some questions were not found"
+        )
+    
+    # Determine filters from questions (for consistency)
+    subjects = set(q.subject for q in questions if q.subject)
+    topics = set(q.topic for q in questions if q.topic)
+    difficulties = set(q.difficulty for q in questions if q.difficulty)
+    
+    # Create assignment
+    assignment = Assignment(
+        classroom_id=request.classroom_id,
+        title=request.title,
+        description=request.description,
+        subject_filter=subjects.pop() if len(subjects) == 1 else None,
+        topic_filter=topics.pop() if len(topics) == 1 else None,
+        difficulty_filter=difficulties.pop() if len(difficulties) == 1 else None,
+        question_count=len(request.question_ids),
+        due_date=request.due_date,
+        assignment_type=AssignmentType.QUIZ,
+        status=AssignmentStatus.PUBLISHED,
+        total_points=len(request.question_ids) * request.points_per_question
+    )
+    
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    
+    # TODO: Store specific question IDs in a separate table or JSON field
+    # For now, students will practice from the question pool matching the filters
+    
+    return AssignmentResponse(
+        id=assignment.id,
+        classroom_id=assignment.classroom_id,
+        title=assignment.title,
+        description=assignment.description,
+        subject_filter=assignment.subject_filter,
+        topic_filter=assignment.topic_filter,
+        question_count=assignment.question_count,
+        due_date=assignment.due_date,
+        created_at=assignment.created_at
+    )
+

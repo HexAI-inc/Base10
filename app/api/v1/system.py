@@ -1,6 +1,13 @@
 """System configuration endpoint for app versioning and maintenance."""
 from fastapi import APIRouter
 from pydantic import BaseModel
+from app.models.enums import (
+    Subject, DifficultyLevel, Topic, GradeLevel, 
+    UserRole, AssignmentType, 
+    AssignmentStatus, PostType, ReportReason, 
+    ReportStatus, AssetType, OTPType
+)
+from app.schemas.schemas import NetworkTypeEnum
 
 router = APIRouter()
 
@@ -84,4 +91,31 @@ async def root():
         "status": "online",
         "docs": "/docs",
         "message": "Education for every student, everywhere 🌍"
+    }
+
+
+@router.get("/metadata/enums")
+async def get_enums():
+    """
+    Get all enum values for frontend form validation and dropdowns.
+    
+    Returns all enum classes with their values for:
+    - Form validation
+    - Dropdown population
+    - Type checking
+    """
+    return {
+        "subjects": [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in Subject],
+        "difficulty_levels": [{"value": d.value, "label": d.value.replace("_", " ").title()} for d in DifficultyLevel],
+        "topics": [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in Topic],
+        "grade_levels": [{"value": g.value, "label": g.value.replace("_", " ").title()} for g in GradeLevel],
+        "user_roles": [{"value": r.value, "label": r.value.replace("_", " ").title()} for r in UserRole],
+        "network_types": [{"value": n.value, "label": n.value.replace("_", " ").title()} for n in NetworkTypeEnum],
+        "assignment_types": [{"value": a.value, "label": a.value.replace("_", " ").title()} for a in AssignmentType],
+        "assignment_statuses": [{"value": a.value, "label": a.value.replace("_", " ").title()} for a in AssignmentStatus],
+        "post_types": [{"value": p.value, "label": p.value.replace("_", " ").title()} for p in PostType],
+        "report_reasons": [{"value": r.value, "label": r.value.replace("_", " ").title()} for r in ReportReason],
+        "report_statuses": [{"value": r.value, "label": r.value.replace("_", " ").title()} for r in ReportStatus],
+        "asset_types": [{"value": a.value, "label": a.value.replace("_", " ").title()} for a in AssetType],
+        "otp_types": [{"value": o.value, "label": o.value.replace("_", " ").title()} for o in OTPType]
     }

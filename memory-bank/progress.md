@@ -1,12 +1,13 @@
-# Progress (Updated: 2025-12-21)
+# Progress (Updated: 2025-12-22)
 
 ## Done
 
-- Resolved PostgreSQL migration errors for strict enum enforcement
-- Fixed application startup issues with import errors and schema references
-- Fixed login endpoint failure due to user role enum value mismatch
-- Successfully applied userrole enum recreation and data normalization
-- Verified login functionality works for both admin and student roles
+- Enhanced practice module with topic-specific questions and AI explanations
+- Implemented AI-generated flashcards with database storage
+- Added content moderation system for flashcards
+- Created manual flashcard creation endpoints
+- Updated card count calculations to only count approved cards
+- Added proper role-based permissions for creation and moderation
 
 ## Doing
 
@@ -14,4 +15,6 @@
 
 ## Next
 
-
+- Test the new flashcard endpoints manually
+- Implement frontend integration for flashcard creation and AI generation
+- Add more comprehensive tests once pytest is fixed
