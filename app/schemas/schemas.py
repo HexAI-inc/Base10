@@ -485,6 +485,7 @@ class FlashcardCreate(FlashcardBase):
 class FlashcardResponse(FlashcardBase):
     """Schema for flashcard responses."""
     id: int
+    approved: bool
     asset: Optional[AssetResponse] = None
     
     class Config:

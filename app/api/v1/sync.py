@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.post("/push", response_model=SyncPushResponse)
-def sync_push_attempts(
+async def sync_push_attempts(
     sync_data: SyncPushRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -38,12 +38,21 @@ def sync_push_attempts(
     synced_count = 0
     failed_count = 0
     
+    # Ensure user_id is int
+    user_id = int(current_user.id)
+    
     for attempt_data in sync_data.attempts:
         try:
+            # Verify question exists
+            question_exists = db.query(Question).filter(Question.id == attempt_data.question_id).first()
+            if not question_exists:
+                failed_count += 1
+                continue
+
             # Check for duplicate (same device, same question, same time)
             existing = db.query(Attempt).filter(
                 and_(
-                    Attempt.user_id == current_user.id,
+                    Attempt.user_id == user_id,
                     Attempt.question_id == attempt_data.question_id,
                     Attempt.device_id == sync_data.device_id,
                     Attempt.attempted_at == attempt_data.attempted_at
@@ -59,7 +68,7 @@ def sync_push_attempts(
             # Get previous attempt for this question to continue SRS chain
             previous_attempt = db.query(Attempt).filter(
                 and_(
-                    Attempt.user_id == current_user.id,
+                    Attempt.user_id == user_id,
                     Attempt.question_id == attempt_data.question_id
                 )
             ).order_by(Attempt.attempted_at.desc()).first()
@@ -77,7 +86,7 @@ def sync_push_attempts(
             
             # Create new attempt record with SRS data
             new_attempt = Attempt(
-                user_id=current_user.id,
+                user_id=user_id,
                 question_id=attempt_data.question_id,
                 is_correct=attempt_data.is_correct,
                 selected_option=attempt_data.selected_option,
@@ -114,29 +123,22 @@ def sync_push_attempts(
 
 
 @router.post("/pull", response_model=SyncPullResponse)
-def sync_pull_questions(
+async def sync_pull_questions(
     pull_request: SyncPullRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Pull new questions with DELTA SYNC optimization.
-    
-    Delta Sync Reduces Data Usage:
-    - WITHOUT delta: Downloads all 200 questions every time (~2MB)
-    - WITH delta: Only downloads changed questions since last sync (~50KB avg)
-    
-    Algorithm with Spaced Repetition:
-    1. If last_sync_timestamp provided, filter by updated_at > timestamp
-    2. Get questions due for SRS review (next_review_date <= now)
-    3. Prioritize: 40% due reviews, 30% weak topics, 30% new material
-    4. Return only changed questions (massive data savings)
     """
+    # Ensure user_id is int
+    user_id = int(current_user.id)
+    
     # Get questions due for spaced repetition review
-    due_question_ids = _get_due_review_questions(db, current_user.id)
+    due_question_ids = _get_due_review_questions(db, user_id)
     
     # Get user's performance by topic
-    weak_topics = _calculate_weak_topics(db, current_user.id)
+    weak_topics = _calculate_weak_topics(db, user_id)
     
     # Build base query for questions (exclude soft-deleted)
     query = db.query(Question).filter(Question.deleted_at.is_(None))
@@ -197,7 +199,7 @@ def sync_pull_questions(
         questions = query.order_by(Question.updated_at.desc()).limit(pull_request.limit).all()
     
     # Calculate overall stats
-    stats = _calculate_user_stats(db, current_user.id)
+    stats = _calculate_user_stats(db, user_id)
 
     # Include any newly graded submissions since last sync (for notifications)
     new_grades = []
@@ -205,7 +207,7 @@ def sync_pull_questions(
         from app.models.classroom import Submission
         if pull_request.last_sync_timestamp:
             graded_subs = db.query(Submission).filter(
-                Submission.student_id == current_user.id,
+                Submission.student_id == user_id,
                 Submission.is_graded == 1,
                 Submission.graded_at > pull_request.last_sync_timestamp
             ).all()
@@ -214,7 +216,7 @@ def sync_pull_questions(
             from datetime import timedelta
             cutoff = datetime.utcnow() - timedelta(days=7)
             graded_subs = db.query(Submission).filter(
-                Submission.student_id == current_user.id,
+                Submission.student_id == user_id,
                 Submission.is_graded == 1,
                 Submission.graded_at >= cutoff
             ).all()
@@ -287,13 +289,13 @@ def _calculate_weak_topics(db: Session, user_id: int, threshold: float = 0.5) ->
     ).group_by(
         Question.topic
     ).having(
-        func.count(Attempt.id) >= 5  # Need at least 5 attempts to judge
+        func.count(Attempt.id) >= 1
     ).all()
     
     weak_topics = []
     for topic, total, correct in results:
         accuracy = (correct or 0) / total if total > 0 else 0
-        if accuracy < threshold:
+        if accuracy <= threshold:
             weak_topics.append(topic)
     
     return weak_topics
@@ -316,7 +318,7 @@ def _calculate_user_stats(db: Session, user_id: int) -> Dict:
 
 
 @router.get("/stats")
-def get_user_stats(
+async def get_user_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -324,8 +326,11 @@ def get_user_stats(
     Get comprehensive user statistics.
     Used by mobile app dashboard.
     """
-    stats = _calculate_user_stats(db, current_user.id)
-    weak_topics = _calculate_weak_topics(db, current_user.id)
+    # Ensure user_id is int
+    user_id = int(current_user.id)
+    
+    stats = _calculate_user_stats(db, user_id)
+    weak_topics = _calculate_weak_topics(db, user_id)
     
     # Get subject breakdown
     subject_stats = db.query(
@@ -335,7 +340,7 @@ def get_user_stats(
     ).join(
         Attempt, Attempt.question_id == Question.id
     ).filter(
-        Attempt.user_id == current_user.id
+        Attempt.user_id == user_id
     ).group_by(
         Question.subject
     ).all()
@@ -350,7 +355,7 @@ def get_user_stats(
         }
     
     # Calculate streak (days with at least 1 attempt)
-    streak_days = _calculate_streak(db, current_user.id)
+    streak_days = _calculate_streak(db, user_id)
     
     return {
         **stats,
@@ -393,7 +398,7 @@ def _calculate_streak(db: Session, user_id: int) -> int:
 
 
 @router.get("/reviews/due")
-def get_due_reviews(
+async def get_due_reviews(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -402,7 +407,8 @@ def get_due_reviews(
     
     Mobile app can show: "📚 5 reviews due today!"
     """
-    due_question_ids = _get_due_review_questions(db, current_user.id)
+    user_id = int(current_user.id)
+    due_question_ids = _get_due_review_questions(db, user_id)
     
     # Get question details
     questions = db.query(Question).filter(Question.id.in_(due_question_ids)).all()

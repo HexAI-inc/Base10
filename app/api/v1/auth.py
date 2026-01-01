@@ -32,7 +32,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if payload is None:
         raise credentials_exception
     
-    user_id: int = payload.get("sub")
+    try:
+        user_id = int(payload.get("sub"))
+    except (ValueError, TypeError):
+        raise credentials_exception
+    
     if user_id is None:
         raise credentials_exception
     
