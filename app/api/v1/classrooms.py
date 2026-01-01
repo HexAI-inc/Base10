@@ -15,94 +15,27 @@ from app.models.student_profile import StudentProfile, TeacherMessage
 from app.models.progress import Attempt
 from app.core.security import get_current_user
 from app.services.comms_service import CommunicationService, MessageType, MessagePriority
+from app.schemas.schemas import (
+    StreamPostCreate,
+    StreamPostResponse,
+    MaterialCreate,
+    ClassroomUpdate,
+    AssignmentUpdate,
+    MaterialUpdate,
+    MaterialResponse,
+    ManualAssignmentCreate,
+    SubmissionCreate,
+    GradeCreate,
+    ClassroomCreate,
+    ClassroomResponse,
+    ClassroomJoin,
+    AssignmentCreate,
+    AssignmentResponse
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# ---------------- Schemas ----------------
-class StreamPostCreate(BaseModel):
-    content: str = Field(..., min_length=1)
-    attachment_url: Optional[str] = None
-
-
-class StreamPostResponse(BaseModel):
-    id: int
-    classroom_id: int
-    author_id: int
-    content: str
-    post_type: str
-    attachment_url: Optional[str]
-    parent_post_id: Optional[int]
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class MaterialCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    asset_id: Optional[str] = None
-
-
-class ClassroomUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    subject: Optional[str] = Field(None, max_length=100)
-    grade_level: Optional[str] = Field(None, max_length=50)
-
-
-class AssignmentUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    subject_filter: Optional[str] = None
-    topic_filter: Optional[str] = None
-    difficulty_filter: Optional[str] = None
-    question_count: Optional[int] = Field(None, gt=0)
-    assignment_type: Optional[str] = None
-    max_points: Optional[int] = Field(None, gt=0)
-    status: Optional[str] = None
-    due_date: Optional[datetime] = None
-
-
-class MaterialUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    asset_id: Optional[str] = None
-    url: Optional[str] = None
-
-
-class MaterialResponse(BaseModel):
-    id: int
-    classroom_id: int
-    uploaded_by_id: int
-    title: Optional[str]
-    description: Optional[str]
-    asset_id: Optional[str]
-    url: Optional[str]
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ManualAssignmentCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    due_date: Optional[datetime] = None
-    points: Optional[int] = 100
-
-
-class SubmissionCreate(BaseModel):
-    content_text: Optional[str] = None
-    attachment_url: Optional[str] = None
-
-
-class GradeCreate(BaseModel):
-    grade: int = Field(..., ge=0, le=100)
-    feedback: Optional[str] = None
 
 
 # ---------------- Helpers ----------------
@@ -122,17 +55,17 @@ async def get_class_stream(classroom_id: int, db: Session = Depends(get_db), use
     return posts
 
 
-@router.post("/classrooms", status_code=status.HTTP_201_CREATED)
-async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@router.post("/classrooms", status_code=status.HTTP_201_CREATED, response_model=ClassroomResponse)
+async def create_classroom(classroom_data: ClassroomCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Create a new classroom.
     
     Only teachers and admins can create classrooms.
     """
-    from app.core.rbac import UserRole
+    from app.models.enums import UserRole
     
     # Enforce role-based access
-    if user.role not in [UserRole.TEACHER.value, UserRole.ADMIN.value]:
+    if user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Only teachers can create classrooms. Please update your account role to 'teacher'."
@@ -142,8 +75,10 @@ async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), 
     join_code = Classroom.generate_join_code()
     classroom = Classroom(
         teacher_id=user.id,
-        name=classroom_data.get('name'),
-        description=classroom_data.get('description'),
+        name=classroom_data.name,
+        description=classroom_data.description,
+        subject=classroom_data.subject,
+        grade_level=classroom_data.grade_level,
         join_code=join_code
     )
     db.add(classroom)
@@ -152,7 +87,10 @@ async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), 
     
     logger.info(f"👩‍🏫 Teacher {user.id} ({user.full_name or user.username}) created classroom: {classroom.name}")
     
-    return {"id": classroom.id, "join_code": classroom.join_code}
+    # Add student count for response model
+    classroom.student_count = 0
+    
+    return classroom
 
 
 @router.get("/classrooms", response_model=List[dict])

@@ -18,6 +18,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.models.user import User
 from app.models.question import Question
+from app.models.enums import UserRole
 from app.core.security import get_password_hash
 
 # Use in-memory SQLite for tests (fast, isolated)
@@ -45,6 +46,12 @@ def test_db():
         db.close()
         # Drop tables after test
         Base.metadata.drop_all(bind=test_engine)
+
+
+@pytest.fixture(scope="function")
+def session(test_db):
+    """Alias for test_db to match some tests."""
+    return test_db
 
 
 def override_get_db():

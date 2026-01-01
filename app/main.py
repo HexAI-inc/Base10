@@ -36,13 +36,16 @@ from app.api.v1 import (
 async def lifespan(app: FastAPI):
     """
     Startup/shutdown events for the application.
-    Creates database tables on startup.
+    Creates database tables on startup in development.
     Starts scheduler for automated engagement (streaks, reminders, leaderboards).
     """
     # Startup
-    print("🚀 Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database ready!")
+    if settings.ENVIRONMENT == "development":
+        print("🚀 Creating database tables (Development Mode)...")
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database ready!")
+    else:
+        print(f"🚀 Running in {settings.ENVIRONMENT} mode - skipping automatic table creation.")
     
     # Start scheduler for automated engagement
     try:
@@ -115,7 +118,7 @@ app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Offline Sync"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["Leaderboard"])
 app.include_router(teacher.router, prefix="/api/v1/teacher", tags=["Teacher"])
-app.include_router(classrooms.router, prefix="/api/v1", tags=["Classrooms"])
+app.include_router(classrooms.router, prefix="/api/v1/teacher", tags=["Classrooms"])
 
 # Student Dashboard & Analytics
 app.include_router(student.router, prefix="/api/v1/student", tags=["Student Dashboard"])

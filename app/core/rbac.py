@@ -3,24 +3,10 @@ from functools import wraps
 from fastapi import HTTPException, status
 from typing import List, Callable
 from app.models.user import User
+from app.models.enums import UserRole
 
 
-# Define role hierarchy
-class UserRole:
-    """User role constants."""
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
-    
-    ALL_ROLES = [STUDENT, TEACHER, ADMIN]
-    
-    @classmethod
-    def validate(cls, role: str) -> bool:
-        """Check if role is valid."""
-        return role in cls.ALL_ROLES
-
-
-def require_role(allowed_roles: List[str]):
+def require_role(allowed_roles: List[UserRole]):
     """
     Decorator to enforce role-based access control.
     
@@ -48,6 +34,19 @@ def require_role(allowed_roles: List[str]):
             
             if not user:
                 raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Authentication required"
+                )
+            
+            if user.role not in allowed_roles:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied. Required roles: {[r.value for r in allowed_roles]}"
+                )
+            
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Authentication required"
                 )

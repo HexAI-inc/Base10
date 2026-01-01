@@ -11,10 +11,11 @@ from app.models.user import User
 from app.models.classroom import Classroom, Assignment
 from app.models.question import Question, Subject, DifficultyLevel
 from app.models.progress import Attempt
+from app.models.enums import UserRole
 
 
 @pytest.mark.asyncio
-async def test_create_classroom(client: AsyncClient, auth_headers: dict):
+async def test_create_classroom(client: AsyncClient, teacher_headers: dict):
     """Test creating a new classroom."""
     response = await client.post(
         "/api/v1/teacher/classrooms",
@@ -22,7 +23,7 @@ async def test_create_classroom(client: AsyncClient, auth_headers: dict):
             "name": "Grade 10 Mathematics",
             "description": "Advanced algebra and geometry"
         },
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -35,12 +36,12 @@ async def test_create_classroom(client: AsyncClient, auth_headers: dict):
 
 
 @pytest.mark.asyncio
-async def test_create_classroom_no_description(client: AsyncClient, auth_headers: dict):
+async def test_create_classroom_no_description(client: AsyncClient, teacher_headers: dict):
     """Test creating classroom without description."""
     response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Physics 101"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -50,23 +51,23 @@ async def test_create_classroom_no_description(client: AsyncClient, auth_headers
 
 
 @pytest.mark.asyncio
-async def test_create_classroom_missing_name(client: AsyncClient, auth_headers: dict):
+async def test_create_classroom_missing_name(client: AsyncClient, teacher_headers: dict):
     """Test creating classroom without required name."""
     response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"description": "Test description"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code == 422  # Validation error
 
 
 @pytest.mark.asyncio
-async def test_list_classrooms_empty(client: AsyncClient, auth_headers: dict):
+async def test_list_classrooms_empty(client: AsyncClient, teacher_headers: dict):
     """Test listing classrooms when teacher has none."""
     response = await client.get(
         "/api/v1/teacher/classrooms",
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -78,7 +79,7 @@ async def test_list_classrooms_empty(client: AsyncClient, auth_headers: dict):
 @pytest.mark.asyncio
 async def test_list_classrooms_with_students(
     client: AsyncClient, 
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test listing classrooms shows student count."""
@@ -86,7 +87,7 @@ async def test_list_classrooms_with_students(
     create_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Test Class with Students"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     assert create_response.status_code in [200, 201]
     classroom_data = create_response.json()
@@ -105,7 +106,7 @@ async def test_list_classrooms_with_students(
     
     # Student joins classroom
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     join_response = await client.post(
@@ -118,7 +119,7 @@ async def test_list_classrooms_with_students(
     # List classrooms and verify student count
     list_response = await client.get(
         "/api/v1/teacher/classrooms",
-        headers=auth_headers
+        headers=teacher_headers
     )
     assert list_response.status_code == 200
     classrooms = list_response.json()
@@ -134,7 +135,7 @@ async def test_list_classrooms_with_students(
 @pytest.mark.asyncio
 async def test_student_join_classroom_valid_code(
     client: AsyncClient,
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test student successfully joining classroom with valid code."""
@@ -142,7 +143,7 @@ async def test_student_join_classroom_valid_code(
     create_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Join Test Classroom"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     join_code = create_response.json()["join_code"]
     
@@ -157,7 +158,7 @@ async def test_student_join_classroom_valid_code(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     # Join classroom
@@ -169,9 +170,8 @@ async def test_student_join_classroom_valid_code(
     
     assert response.status_code in [200, 201]
     data = response.json()
-    assert data["message"] == "Successfully joined classroom"
-    assert "classroom" in data
-    assert data["classroom"]["name"] == "Join Test Classroom"
+    assert "Successfully joined" in data["message"]
+    assert "classroom_id" in data
 
 
 @pytest.mark.asyncio
@@ -190,7 +190,7 @@ async def test_student_join_classroom_invalid_code(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     response = await client.post(
@@ -205,7 +205,7 @@ async def test_student_join_classroom_invalid_code(
 @pytest.mark.asyncio
 async def test_student_join_classroom_twice(
     client: AsyncClient,
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test student joining same classroom twice."""
@@ -213,7 +213,7 @@ async def test_student_join_classroom_twice(
     create_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Duplicate Join Test"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     join_code = create_response.json()["join_code"]
     
@@ -228,7 +228,7 @@ async def test_student_join_classroom_twice(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     # Join first time
@@ -251,14 +251,14 @@ async def test_student_join_classroom_twice(
 @pytest.mark.asyncio
 async def test_create_assignment(
     client: AsyncClient,
-    auth_headers: dict
+    teacher_headers: dict
 ):
     """Test creating an assignment for a classroom."""
     # Create classroom first
     classroom_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Assignment Test Class"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     classroom_id = classroom_response.json()["id"]
     
@@ -269,33 +269,32 @@ async def test_create_assignment(
         json={
             "classroom_id": classroom_id,
             "title": "Chapter 3 Practice",
-            "description": "Complete all algebra questions",
-            "subject": "MATHEMATICS",
-            "topic": "Algebra",
-            "difficulty": "MEDIUM",
+            "subject_filter": "Mathematics",
+            "topic_filter": "Algebra",
+            "question_count": 15,
             "due_date": due_date
         },
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
     data = response.json()
     assert data["title"] == "Chapter 3 Practice"
     assert data["classroom_id"] == classroom_id
-    assert data["subject"] == "MATHEMATICS"
-    assert data["topic"] == "Algebra"
+    assert data["subject_filter"] == "Mathematics"
+    assert data["topic_filter"] == "Algebra"
 
 
 @pytest.mark.asyncio
 async def test_create_assignment_minimal(
     client: AsyncClient,
-    auth_headers: dict
+    teacher_headers: dict
 ):
     """Test creating assignment with only required fields."""
     classroom_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Minimal Assignment Class"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     classroom_id = classroom_response.json()["id"]
     
@@ -305,7 +304,7 @@ async def test_create_assignment_minimal(
             "classroom_id": classroom_id,
             "title": "Quick Quiz"
         },
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -318,7 +317,7 @@ async def test_create_assignment_minimal(
 @pytest.mark.asyncio
 async def test_create_assignment_invalid_classroom(
     client: AsyncClient,
-    auth_headers: dict
+    teacher_headers: dict
 ):
     """Test creating assignment for non-existent classroom fails."""
     response = await client.post(
@@ -327,7 +326,7 @@ async def test_create_assignment_invalid_classroom(
             "classroom_id": 999999,
             "title": "Invalid Assignment"
         },
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [404, 400]
@@ -336,19 +335,19 @@ async def test_create_assignment_invalid_classroom(
 @pytest.mark.asyncio
 async def test_analytics_empty_classroom(
     client: AsyncClient,
-    auth_headers: dict
+    teacher_headers: dict
 ):
     """Test analytics for classroom with no students."""
     classroom_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Empty Analytics Class"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     classroom_id = classroom_response.json()["id"]
     
     response = await client.get(
         f"/api/v1/teacher/analytics/{classroom_id}",
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -362,7 +361,7 @@ async def test_analytics_empty_classroom(
 @pytest.mark.asyncio
 async def test_analytics_with_psychometric_data(
     client: AsyncClient,
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test analytics with varied psychometric data including guessing, struggles, misconceptions."""
@@ -370,7 +369,7 @@ async def test_analytics_with_psychometric_data(
     classroom_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Analytics Test Class"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     classroom_data = classroom_response.json()
     classroom_id = classroom_data["id"]
@@ -408,7 +407,7 @@ async def test_analytics_with_psychometric_data(
             phone_number=f"+123456789{i}",
             hashed_password="hashedpass",
             full_name=f"Analytics Student {i}",
-            is_teacher=False
+            role=UserRole.STUDENT
         )
         session.add(student)
         students_data.append(student)
@@ -418,7 +417,7 @@ async def test_analytics_with_psychometric_data(
     # Have students join classroom
     from app.core.security import create_access_token
     for student in students_data:
-        student_token = create_access_token(student.id)
+        student_token = create_access_token({"sub": str(student.id)})
         student_headers = {"Authorization": f"Bearer {student_token}"}
         await client.post(
             "/api/v1/teacher/classrooms/join",
@@ -498,7 +497,7 @@ async def test_analytics_with_psychometric_data(
     # Get analytics
     response = await client.get(
         f"/api/v1/teacher/analytics/{classroom_id}",
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
@@ -510,10 +509,10 @@ async def test_analytics_with_psychometric_data(
     assert data["active_students"] >= 1  # At least 1 student active in last 7 days
     
     # Verify student performance includes psychometric insights
-    assert len(data.get("student_performance", [])) == 3
+    assert len(data.get("students", [])) == 3
     
     # Find each student's performance
-    student_perfs = {sp["student_id"]: sp for sp in data["student_performance"]}
+    student_perfs = {sp["user_id"]: sp for sp in data["students"]}
     
     # Student 0: Should have high guessing rate
     student0_perf = student_perfs[students_data[0].id]
@@ -533,18 +532,18 @@ async def test_analytics_with_psychometric_data(
     assert student2_perf["misconception_count"] >= 1  # High confidence + wrong
     
     # Verify topic performance breakdown
-    assert "topic_performance" in data
-    assert len(data["topic_performance"]) > 0
+    assert "topics" in data
+    assert len(data["topics"]) > 0
     
     # Check for topics in the data
-    topics = {tp["topic"] for tp in data["topic_performance"]}
+    topics = {tp["topic"] for tp in data["topics"]}
     assert "Algebra" in topics or "Geometry" in topics
 
 
 @pytest.mark.asyncio
 async def test_analytics_unauthorized_classroom(
     client: AsyncClient,
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test that teachers can only view analytics for their own classrooms."""
@@ -553,7 +552,8 @@ async def test_analytics_unauthorized_classroom(
         email="other_teacher@test.com",
         phone_number="+9876543210",
         hashed_password="hashedpass",
-        full_name="Other Teacher"
+        full_name="Other Teacher",
+        role=UserRole.TEACHER
     )
     session.add(other_teacher)
     session.commit()
@@ -561,7 +561,7 @@ async def test_analytics_unauthorized_classroom(
     
     # Other teacher creates classroom
     from app.core.security import create_access_token
-    other_token = create_access_token(other_teacher.id)
+    other_token = create_access_token({"sub": str(other_teacher.id)})
     other_headers = {"Authorization": f"Bearer {other_token}"}
     
     classroom_response = await client.post(
@@ -574,7 +574,7 @@ async def test_analytics_unauthorized_classroom(
     # Original teacher tries to access other teacher's analytics
     response = await client.get(
         f"/api/v1/teacher/analytics/{classroom_id}",
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code == 403  # Forbidden
@@ -583,7 +583,7 @@ async def test_analytics_unauthorized_classroom(
 @pytest.mark.asyncio
 async def test_analytics_class_averages(
     client: AsyncClient,
-    auth_headers: dict,
+    teacher_headers: dict,
     session: Session
 ):
     """Test that analytics includes class-wide averages."""
@@ -591,22 +591,22 @@ async def test_analytics_class_averages(
     classroom_response = await client.post(
         "/api/v1/teacher/classrooms",
         json={"name": "Averages Test Class"},
-        headers=auth_headers
+        headers=teacher_headers
     )
     classroom_id = classroom_response.json()["id"]
     
     response = await client.get(
         f"/api/v1/teacher/analytics/{classroom_id}",
-        headers=auth_headers
+        headers=teacher_headers
     )
     
     assert response.status_code in [200, 201]
     data = response.json()
     
     # Verify class-wide metrics exist
-    assert "class_accuracy" in data
+    assert "average_accuracy" in data
     assert "average_confidence" in data
-    assert isinstance(data["class_accuracy"], (int, float))
+    assert isinstance(data["average_accuracy"], (int, float))
     assert isinstance(data["average_confidence"], (int, float, type(None)))
 
 

@@ -514,6 +514,171 @@ class FlashcardDeckResponse(FlashcardDeckBase):
         from_attributes = True
 
 
+# ============= Classroom & Assignment Schemas =============
+
+class ClassroomCreate(BaseModel):
+    """Schema for creating a classroom."""
+    name: str = Field(..., min_length=3, max_length=100, description="Classroom name")
+    description: Optional[str] = Field(None, max_length=500)
+    subject: Optional[Subject] = None
+    grade_level: Optional[GradeLevel] = None
+
+
+class ClassroomResponse(BaseModel):
+    """Schema for classroom responses."""
+    id: int
+    name: str
+    description: Optional[str]
+    join_code: str
+    is_active: int
+    student_count: int
+    subject: Optional[Subject] = None
+    grade_level: Optional[GradeLevel] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ClassroomJoin(BaseModel):
+    """Schema for students joining a classroom."""
+    join_code: str = Field(..., min_length=7, max_length=12)
+
+
+class AssignmentCreate(BaseModel):
+    """Schema for creating an assignment."""
+    classroom_id: int
+    title: str = Field(..., min_length=3, max_length=200)
+    description: Optional[str] = None
+    subject_filter: Optional[Subject] = None
+    topic_filter: Optional[Topic] = None
+    difficulty_filter: Optional[DifficultyLevel] = None
+    question_count: int = Field(default=10, ge=1, le=50)
+    due_date: Optional[datetime] = None
+
+
+class AssignmentResponse(BaseModel):
+    """Schema for assignment responses."""
+    id: int
+    classroom_id: int
+    title: str
+    description: Optional[str]
+    subject_filter: Optional[Subject] = None
+    topic_filter: Optional[Topic] = None
+    question_count: int
+    due_date: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class StudentPerformance(BaseModel):
+    """Individual student performance in a classroom."""
+    user_id: int
+    full_name: str
+    total_attempts: int
+    correct_attempts: int
+    accuracy: float
+    avg_time_ms: Optional[float]
+    guessing_rate: float  # % of attempts < 2 seconds
+    struggle_rate: float  # % of attempts > 60 seconds
+    misconception_count: int  # High confidence + wrong
+
+
+class StreamPostCreate(BaseModel):
+    """Schema for creating a stream post."""
+    content: str = Field(..., min_length=1)
+    attachment_url: Optional[str] = None
+
+
+class StreamPostResponse(BaseModel):
+    """Schema for stream post responses."""
+    id: int
+    classroom_id: int
+    author_id: int
+    content: str
+    post_type: str
+    attachment_url: Optional[str]
+    parent_post_id: Optional[int]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MaterialCreate(BaseModel):
+    """Schema for creating classroom material."""
+    title: str
+    description: Optional[str] = None
+    asset_id: Optional[str] = None
+
+
+class ClassroomUpdate(BaseModel):
+    """Schema for updating a classroom."""
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    subject: Optional[str] = Field(None, max_length=100)
+    grade_level: Optional[str] = Field(None, max_length=50)
+
+
+class AssignmentUpdate(BaseModel):
+    """Schema for updating an assignment."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    subject_filter: Optional[str] = None
+    topic_filter: Optional[str] = None
+    difficulty_filter: Optional[str] = None
+    question_count: Optional[int] = Field(None, gt=0)
+    assignment_type: Optional[str] = None
+    max_points: Optional[int] = Field(None, gt=0)
+    status: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+
+class MaterialUpdate(BaseModel):
+    """Schema for updating classroom material."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    asset_id: Optional[str] = None
+    url: Optional[str] = None
+
+
+class MaterialResponse(BaseModel):
+    """Schema for classroom material responses."""
+    id: int
+    classroom_id: int
+    uploaded_by_id: int
+    title: Optional[str]
+    description: Optional[str]
+    asset_id: Optional[str]
+    url: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ManualAssignmentCreate(BaseModel):
+    """Schema for creating a manual assignment."""
+    title: str
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    points: Optional[int] = 100
+
+
+class SubmissionCreate(BaseModel):
+    """Schema for creating a submission."""
+    content_text: Optional[str] = None
+    attachment_url: Optional[str] = None
+
+
+class GradeCreate(BaseModel):
+    """Schema for grading a submission."""
+    grade: int = Field(..., ge=0, le=100)
+    feedback: Optional[str] = None
+
+
 # ============= Teacher AI Assistant Schemas =============
 
 class TeacherAIRequest(BaseModel):

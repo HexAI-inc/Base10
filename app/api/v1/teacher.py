@@ -15,88 +15,24 @@ from app.models.question import Question
 from app.services.storage import StorageService, AssetType
 from app.services.teacher_ai_assistant import process_teacher_command
 from fastapi import UploadFile, File, Query
-from app.models.enums import Subject, Topic, DifficultyLevel, AssignmentType, AssignmentStatus, GradeLevel
+from app.models.enums import Subject, Topic, DifficultyLevel, AssignmentType, AssignmentStatus, GradeLevel, UserRole
 from app.core.security import get_current_user
 from app.schemas.schemas import (
     TeacherAIRequest, 
     TeacherAIResponse, 
     ApproveQuizRequest,
-    AssignmentResponse
+    AssignmentResponse,
+    ClassroomCreate,
+    ClassroomResponse,
+    ClassroomJoin,
+    AssignmentCreate,
+    StudentPerformance
 )
 
 router = APIRouter()
 
 
-# ============= Schemas =============
-
-class ClassroomCreate(BaseModel):
-    """Schema for creating a classroom."""
-    name: str = Field(..., min_length=3, max_length=100, description="Classroom name")
-    description: Optional[str] = Field(None, max_length=500)
-    subject: Optional[Subject] = None
-    grade_level: Optional[GradeLevel] = None
-
-
-class ClassroomResponse(BaseModel):
-    """Schema for classroom responses."""
-    id: int
-    name: str
-    description: Optional[str]
-    join_code: str
-    is_active: int
-    student_count: int
-    subject: Optional[Subject] = None
-    grade_level: Optional[GradeLevel] = None
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class ClassroomJoin(BaseModel):
-    """Schema for students joining a classroom."""
-    join_code: str = Field(..., min_length=7, max_length=12)
-
-
-class AssignmentCreate(BaseModel):
-    """Schema for creating an assignment."""
-    classroom_id: int
-    title: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
-    subject_filter: Optional[Subject] = None
-    topic_filter: Optional[Topic] = None
-    difficulty_filter: Optional[DifficultyLevel] = None
-    question_count: int = Field(default=10, ge=1, le=50)
-    due_date: Optional[datetime] = None
-
-
-class AssignmentResponse(BaseModel):
-    """Schema for assignment responses."""
-    id: int
-    classroom_id: int
-    title: str
-    description: Optional[str]
-    subject_filter: Optional[Subject] = None
-    topic_filter: Optional[Topic] = None
-    question_count: int
-    due_date: Optional[datetime]
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class StudentPerformance(BaseModel):
-    """Individual student performance in a classroom."""
-    user_id: int
-    full_name: str
-    total_attempts: int
-    correct_attempts: int
-    accuracy: float
-    avg_time_ms: Optional[float]
-    guessing_rate: float  # % of attempts < 2 seconds
-    struggle_rate: float  # % of attempts > 60 seconds
-    misconception_count: int  # High confidence + wrong
+# ============= Endpoints =============
 
 
 class TopicPerformance(BaseModel):
@@ -118,6 +54,7 @@ class ClassroomAnalytics(BaseModel):
     # Overall metrics
     total_attempts: int
     average_accuracy: float
+    average_confidence: Optional[float] = None
     
     # Psychometric insights
     avg_time_per_question_ms: Optional[float]
@@ -172,7 +109,7 @@ async def create_assignment(
     db.commit()
     db.refresh(assignment)
     
-    return analytics
+    return assignment
 
 
 # ============= Classroom Materials =============
@@ -298,19 +235,22 @@ async def get_classroom_analytics(
     Powered by psychometric data from attempts.
     """
     # Verify teacher owns this classroom
-    classroom = db.query(Classroom).filter(
-        Classroom.id == classroom_id,
-        Classroom.teacher_id == current_user.id
-    ).first()
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     
     if not classroom:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Classroom not found or you don't have permission"
+            detail="Classroom not found"
+        )
+    
+    if classroom.teacher_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to view this classroom's analytics"
         )
     
     # Get student IDs in this classroom
-    student_ids = [s.id for s in classroom.students]
+    student_ids = [row[0] for row in db.query(classroom_students.c.student_id).filter(classroom_students.c.classroom_id == classroom_id).all()]
     
     if not student_ids:
         return ClassroomAnalytics(
@@ -399,14 +339,14 @@ async def get_classroom_analytics(
     topics = []
     for topic, total, accuracy, avg_conf in topic_stats:
         # Count students struggling with this topic (< 50% accuracy)
-        struggling = db.query(func.count(func.distinct(Attempt.user_id))).filter(
+        struggling = db.query(Attempt.user_id).filter(
             Attempt.user_id.in_(student_ids),
             Attempt.question_id.in_(
                 db.query(Question.id).filter(Question.topic == topic)
             )
         ).group_by(Attempt.user_id).having(
             func.avg(case((Attempt.is_correct, 1), else_=0)) < 0.5
-        ).scalar() or 0
+        ).count()
         
         topics.append(TopicPerformance(
             topic=topic,
@@ -416,11 +356,16 @@ async def get_classroom_analytics(
             struggling_students=struggling
         ))
     
-    # Overall class metrics
-    all_attempts = db.query(Attempt).filter(Attempt.user_id.in_(student_ids)).all()
-    total_attempts = len(all_attempts)
-    correct_attempts = sum(1 for a in all_attempts if a.is_correct)
+    # Get all attempts for these students
+    student_attempts = db.query(Attempt).filter(Attempt.user_id.in_(student_ids)).all()
+    
+    total_attempts = len(student_attempts)
+    correct_attempts = sum(1 for a in student_attempts if a.is_correct)
     avg_accuracy = (correct_attempts / total_attempts * 100) if total_attempts > 0 else 0
+    
+    # Average confidence
+    confidences = [a.confidence_level for a in student_attempts if a.confidence_level is not None]
+    avg_confidence = sum(confidences) / len(confidences) if confidences else None
     
     # Active students (attempts in last 7 days)
     week_ago = datetime.utcnow() - timedelta(days=7)
@@ -430,13 +375,13 @@ async def get_classroom_analytics(
     ).scalar() or 0
     
     # Psychometric class averages
-    all_times = [a.time_taken_ms for a in all_attempts if a.time_taken_ms]
+    all_times = [a.time_taken_ms for a in student_attempts if a.time_taken_ms]
     avg_time_class = sum(all_times) / len(all_times) if all_times else None
     
-    guesses_class = sum(1 for a in all_attempts if a.time_taken_ms and a.time_taken_ms < 2000)
+    guesses_class = sum(1 for a in student_attempts if a.time_taken_ms and a.time_taken_ms < 2000)
     guessing_rate_class = (guesses_class / total_attempts * 100) if total_attempts > 0 else 0
     
-    struggles_class = sum(1 for a in all_attempts if a.time_taken_ms and a.time_taken_ms > 60000)
+    struggles_class = sum(1 for a in student_attempts if a.time_taken_ms and a.time_taken_ms > 60000)
     struggle_rate_class = (struggles_class / total_attempts * 100) if total_attempts > 0 else 0
     
     return ClassroomAnalytics(
@@ -446,6 +391,7 @@ async def get_classroom_analytics(
         active_students=active_students,
         total_attempts=total_attempts,
         average_accuracy=round(avg_accuracy, 2),
+        average_confidence=round(avg_confidence, 2) if avg_confidence else None,
         avg_time_per_question_ms=round(avg_time_class, 2) if avg_time_class else None,
         guessing_rate=round(guessing_rate_class, 2),
         struggle_rate=round(struggle_rate_class, 2),
