@@ -265,7 +265,7 @@ async def test_create_assignment(
     # Create assignment
     due_date = (datetime.utcnow() + timedelta(days=7)).isoformat()
     response = await client.post(
-        "/api/v1/teacher/assignments",
+        f"/api/v1/teacher/classrooms/{classroom_id}/assignments",
         json={
             "classroom_id": classroom_id,
             "title": "Chapter 3 Practice",
@@ -299,7 +299,7 @@ async def test_create_assignment_minimal(
     classroom_id = classroom_response.json()["id"]
     
     response = await client.post(
-        "/api/v1/teacher/assignments",
+        f"/api/v1/teacher/classrooms/{classroom_id}/assignments",
         json={
             "classroom_id": classroom_id,
             "title": "Quick Quiz"
@@ -346,7 +346,7 @@ async def test_analytics_empty_classroom(
     classroom_id = classroom_response.json()["id"]
     
     response = await client.get(
-        f"/api/v1/teacher/analytics/{classroom_id}",
+        f"/api/v1/teacher/classrooms/{classroom_id}/analytics",
         headers=teacher_headers
     )
     
@@ -496,7 +496,7 @@ async def test_analytics_with_psychometric_data(
     
     # Get analytics
     response = await client.get(
-        f"/api/v1/teacher/analytics/{classroom_id}",
+        f"/api/v1/teacher/classrooms/{classroom_id}/analytics",
         headers=teacher_headers
     )
     
@@ -573,7 +573,7 @@ async def test_analytics_unauthorized_classroom(
     
     # Original teacher tries to access other teacher's analytics
     response = await client.get(
-        f"/api/v1/teacher/analytics/{classroom_id}",
+        f"/api/v1/teacher/classrooms/{classroom_id}/analytics",
         headers=teacher_headers
     )
     
@@ -596,7 +596,7 @@ async def test_analytics_class_averages(
     classroom_id = classroom_response.json()["id"]
     
     response = await client.get(
-        f"/api/v1/teacher/analytics/{classroom_id}",
+        f"/api/v1/teacher/classrooms/{classroom_id}/analytics",
         headers=teacher_headers
     )
     
@@ -617,8 +617,8 @@ async def test_teacher_endpoints_require_auth(client: AsyncClient):
         ("/api/v1/teacher/classrooms", "get"),
         ("/api/v1/teacher/classrooms", "post"),
         ("/api/v1/teacher/classrooms/join", "post"),
-        ("/api/v1/teacher/assignments", "post"),
-        ("/api/v1/teacher/analytics/1", "get"),
+        ("/api/v1/teacher/classrooms/1/assignments", "post"),
+        ("/api/v1/teacher/classrooms/1/analytics", "get"),
     ]
     
     for endpoint, method in endpoints:

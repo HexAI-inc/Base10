@@ -47,19 +47,6 @@ def require_role(allowed_roles: List[UserRole]):
             return await func(*args, **kwargs)
         return wrapper
     return decorator
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required"
-                )
-            
-            if user.role not in allowed_roles:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Access denied. Required role: {', '.join(allowed_roles)}"
-                )
-            
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 def check_role(user: User, allowed_roles: List[str]) -> bool:

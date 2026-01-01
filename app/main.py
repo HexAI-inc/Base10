@@ -117,7 +117,6 @@ app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
 # Sync & Leaderboard
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Offline Sync"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["Leaderboard"])
-app.include_router(teacher.router, prefix="/api/v1/teacher", tags=["Teacher"])
 app.include_router(classrooms.router, prefix="/api/v1/teacher", tags=["Classrooms"])
 
 # Student Dashboard & Analytics

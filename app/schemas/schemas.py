@@ -586,6 +586,39 @@ class StudentPerformance(BaseModel):
     misconception_count: int  # High confidence + wrong
 
 
+class TopicPerformance(BaseModel):
+    """Performance by topic."""
+    topic: str
+    total_attempts: int
+    accuracy: float
+    avg_confidence: Optional[float]
+    struggling_students: int
+
+
+class ClassroomAnalytics(BaseModel):
+    """Comprehensive classroom analytics."""
+    classroom_id: int
+    classroom_name: str
+    total_students: int
+    active_students: int  # Students with attempts in last 7 days
+    
+    # Overall metrics
+    total_attempts: int
+    average_accuracy: float
+    average_confidence: Optional[float] = None
+    
+    # Psychometric insights
+    avg_time_per_question_ms: Optional[float]
+    guessing_rate: float
+    struggle_rate: float
+    
+    # Per-student breakdown
+    students: List[StudentPerformance]
+    
+    # Per-topic breakdown
+    topics: List[TopicPerformance]
+
+
 class StreamPostCreate(BaseModel):
     """Schema for creating a stream post."""
     content: str = Field(..., min_length=1)
@@ -611,7 +644,7 @@ class MaterialCreate(BaseModel):
     """Schema for creating classroom material."""
     title: str
     description: Optional[str] = None
-    asset_id: Optional[str] = None
+    asset_id: Optional[int] = None
 
 
 class ClassroomUpdate(BaseModel):
@@ -640,7 +673,7 @@ class MaterialUpdate(BaseModel):
     """Schema for updating classroom material."""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    asset_id: Optional[str] = None
+    asset_id: Optional[int] = None
     url: Optional[str] = None
 
 
@@ -651,7 +684,7 @@ class MaterialResponse(BaseModel):
     uploaded_by_id: int
     title: Optional[str]
     description: Optional[str]
-    asset_id: Optional[str]
+    asset_id: Optional[int]
     url: Optional[str]
     created_at: datetime
 

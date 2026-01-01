@@ -1,7 +1,7 @@
 """Classroom AI integration endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import logging
 from pydantic import BaseModel, Field
@@ -9,7 +9,16 @@ from pydantic import BaseModel, Field
 from app.db.session import get_db
 from app.models.classroom import Classroom, Assignment
 from app.models.user import User
+from app.models.question import Question
+from app.models.enums import UserRole, AssignmentType, AssignmentStatus
 from app.core.security import get_current_user
+from app.schemas.schemas import (
+    TeacherAIRequest, 
+    TeacherAIResponse, 
+    ApproveQuizRequest,
+    AssignmentResponse
+)
+from app.services.teacher_ai_assistant import process_teacher_command
 
 logger = logging.getLogger(__name__)
 
@@ -90,3 +99,99 @@ Your role:
     except Exception as e:
         logger.error(f"❌ AI teacher error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate response")
+
+
+@router.post("/teacher-assistant", response_model=TeacherAIResponse)
+async def teacher_ai_assistant(
+    request: TeacherAIRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    AI Assistant for teachers - natural language classroom management.
+    """
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can use the AI assistant"
+        )
+    
+    # Prepare context
+    context = request.context or {}
+    if request.classroom_id:
+        context['classroom_id'] = request.classroom_id
+    
+    # Process request
+    result = await process_teacher_command(
+        db=db,
+        teacher=current_user,
+        message=request.message,
+        context=context
+    )
+    
+    return result
+
+
+@router.post("/approve-quiz", response_model=AssignmentResponse)
+async def approve_and_send_quiz(
+    request: ApproveQuizRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Approve AI-generated quiz and send to students.
+    """
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can approve quizzes"
+        )
+    
+    # Verify classroom ownership
+    classroom = db.query(Classroom).filter(
+        Classroom.id == request.classroom_id,
+        Classroom.teacher_id == current_user.id
+    ).first()
+    
+    if not classroom:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Classroom not found or you don't have permission"
+        )
+    
+    # Verify all questions exist
+    questions = db.query(Question).filter(
+        Question.id.in_(request.question_ids)
+    ).all()
+    
+    if len(questions) != len(request.question_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some questions were not found"
+        )
+    
+    # Determine filters from questions (for consistency)
+    subjects = set(q.subject for q in questions if q.subject)
+    topics = set(q.topic for q in questions if q.topic)
+    difficulties = set(q.difficulty for q in questions if q.difficulty)
+    
+    # Create assignment
+    assignment = Assignment(
+        classroom_id=request.classroom_id,
+        title=request.title,
+        description=request.description,
+        subject_filter=subjects.pop() if len(subjects) == 1 else None,
+        topic_filter=topics.pop() if len(topics) == 1 else None,
+        difficulty_filter=difficulties.pop() if len(difficulties) == 1 else None,
+        question_count=len(request.question_ids),
+        due_date=request.due_date,
+        assignment_type=AssignmentType.QUIZ,
+        status=AssignmentStatus.PUBLISHED,
+        total_points=len(request.question_ids) * request.points_per_question
+    )
+    
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    
+    return assignment

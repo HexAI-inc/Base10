@@ -1,6 +1,7 @@
 """Classroom assignment submissions and grading endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 
 from app.db.session import get_db
@@ -68,7 +69,7 @@ async def grade_submission(
     
     submission.grade = grade_data.grade
     submission.feedback = grade_data.feedback
-    submission.graded_at = db.func.now()
+    submission.graded_at = func.now()
     submission.graded_by_id = user.id
     
     db.commit()
