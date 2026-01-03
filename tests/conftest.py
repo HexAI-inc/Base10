@@ -18,6 +18,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.models.user import User
 from app.models.question import Question
+from app.models.enums import UserRole
 from app.core.security import get_password_hash
 
 # Use in-memory SQLite for tests (fast, isolated)
@@ -47,6 +48,12 @@ def test_db():
         Base.metadata.drop_all(bind=test_engine)
 
 
+@pytest.fixture(scope="function")
+def session(test_db):
+    """Alias for test_db to match test expectations."""
+    return test_db
+
+
 def override_get_db():
     """Override the database dependency for testing."""
     try:
@@ -70,14 +77,15 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture(scope="function")
 def test_user(test_db):
-    """Create a test user."""
+    """Create a test user (teacher by default for API tests)."""
     user = User(
         phone_number="+23276123456",
         email="test@example.com",
         full_name="Test Student",
         hashed_password=get_password_hash("testpass123"),
         is_active=True,
-        is_verified=True
+        is_verified=True,
+        role=UserRole.TEACHER  # Default to teacher for API tests
     )
     test_db.add(user)
     test_db.commit()

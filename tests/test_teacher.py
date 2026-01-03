@@ -11,6 +11,7 @@ from app.models.user import User
 from app.models.classroom import Classroom, Assignment
 from app.models.question import Question, Subject, DifficultyLevel
 from app.models.progress import Attempt
+from app.models.enums import UserRole
 
 
 @pytest.mark.asyncio
@@ -399,7 +400,7 @@ async def test_analytics_with_psychometric_data(
             phone_number=f"+123456789{i}",
             hashed_password="hashedpass",
             full_name=f"Analytics Student {i}",
-            is_teacher=False
+            role=UserRole.STUDENT
         )
         session.add(student)
         students_data.append(student)
