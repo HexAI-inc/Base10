@@ -16,9 +16,16 @@ class Subject(str, enum.Enum):
     AGRICULTURAL_SCIENCE = "Agricultural Science"
     COMMERCE = "Commerce"
     LITERATURE_IN_ENGLISH = "Literature in English"
+    DATA_SCIENCE = "Data Science"
 
 class UserRole(str, enum.Enum):
     """Platform user roles."""
+    student = "student"
+    teacher = "teacher"
+    admin = "admin"
+    moderator = "moderator"
+
+    # Backward compatibility for code using uppercase
     STUDENT = "student"
     TEACHER = "teacher"
     ADMIN = "admin"
@@ -68,6 +75,9 @@ class GradeLevel(str, enum.Enum):
     SS1 = "SS1"
     SS2 = "SS2"
     SS3 = "SS3"
+    GRADE_10 = "Grade 10"
+    GRADE_11 = "Grade 11"
+    GRADE_12 = "Grade 12"
     UNIVERSITY = "University"
     OTHER = "Other"
 

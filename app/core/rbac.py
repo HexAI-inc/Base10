@@ -10,6 +10,12 @@ import enum
 # Define role hierarchy
 class UserRole(str, enum.Enum):
     """User role constants."""
+    student = "student"
+    teacher = "teacher"
+    admin = "admin"
+    moderator = "moderator"
+
+    # Backward compatibility
     STUDENT = "student"
     TEACHER = "teacher"
     ADMIN = "admin"
