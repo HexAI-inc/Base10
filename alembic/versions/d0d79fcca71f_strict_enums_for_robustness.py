@@ -139,7 +139,7 @@ def upgrade() -> None:
                 WHEN grade_level::text ILIKE 'grade%11%' THEN 'Grade 11'
                 WHEN grade_level::text ILIKE 'grade%12%' THEN 'Grade 12'
                 WHEN UPPER(grade_level::text) = 'UNIVERSITY' THEN 'University'
-                ELSE INITCAP(grade_level::text)
+                ELSE 'Other'
             END WHERE grade_level IS NOT NULL
         """)
 
@@ -154,7 +154,7 @@ def upgrade() -> None:
                 WHEN education_level::text ILIKE 'grade%12%' THEN 'Grade 12'
                 WHEN UPPER(education_level::text) = 'UNIVERSITY' THEN 'University'
                 WHEN UPPER(education_level::text) = 'OTHER' THEN 'Other'
-                ELSE INITCAP(TRIM(education_level::text))
+                ELSE 'Other'
             END WHERE education_level IS NOT NULL
         """)
 
@@ -184,6 +184,11 @@ def upgrade() -> None:
         # Drop defaults that cause casting issues in PostgreSQL
         op.execute("ALTER TABLE assignments ALTER COLUMN assignment_type DROP DEFAULT;")
         op.execute("ALTER TABLE assignments ALTER COLUMN status DROP DEFAULT;")
+        op.execute("ALTER TABLE users ALTER COLUMN role DROP DEFAULT;")
+        op.execute("ALTER TABLE users ALTER COLUMN education_level DROP DEFAULT;")
+        op.execute("ALTER TABLE questions ALTER COLUMN difficulty DROP DEFAULT;")
+        op.execute("ALTER TABLE classroom_posts ALTER COLUMN post_type DROP DEFAULT;")
+        op.execute("ALTER TABLE question_reports ALTER COLUMN status DROP DEFAULT;")
 
     with op.batch_alter_table('assignments', schema=None) as batch_op:
         batch_op.alter_column('subject_filter', existing_type=sa.VARCHAR(length=100), type_=sa.Enum('Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Government', 'Civic Education', 'Financial Accounting', 'Agricultural Science', 'Commerce', 'Literature in English', 'Data Science', name='subject'), postgresql_using='subject_filter::subject',
@@ -201,6 +206,10 @@ def upgrade() -> None:
     if op.get_bind().dialect.name == 'postgresql':
         op.execute("ALTER TABLE assignments ALTER COLUMN assignment_type SET DEFAULT 'quiz'::assignmenttype;")
         op.execute("ALTER TABLE assignments ALTER COLUMN status SET DEFAULT 'draft'::assignmentstatus;")
+        op.execute("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'student'::userrole;")
+        op.execute("ALTER TABLE questions ALTER COLUMN difficulty SET DEFAULT 'medium'::difficultylevel;")
+        op.execute("ALTER TABLE classroom_posts ALTER COLUMN post_type SET DEFAULT 'announcement'::posttype;")
+        op.execute("ALTER TABLE question_reports ALTER COLUMN status SET DEFAULT 'pending'::reportstatus;")
 
     with op.batch_alter_table('assignments', schema=None) as batch_op:
         batch_op.alter_column('max_points',
