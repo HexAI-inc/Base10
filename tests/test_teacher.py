@@ -106,7 +106,7 @@ async def test_list_classrooms_with_students(
     
     # Student joins classroom
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     join_response = await client.post(
@@ -158,7 +158,7 @@ async def test_student_join_classroom_valid_code(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     # Join classroom
@@ -190,7 +190,7 @@ async def test_student_join_classroom_invalid_code(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     response = await client.post(
@@ -228,7 +228,7 @@ async def test_student_join_classroom_twice(
     session.commit()
     
     from app.core.security import create_access_token
-    student_token = create_access_token(student.id)
+    student_token = create_access_token({"sub": str(student.id)})
     student_headers = {"Authorization": f"Bearer {student_token}"}
     
     # Join first time
@@ -410,7 +410,7 @@ async def test_analytics_with_psychometric_data(
     # Have students join classroom
     from app.core.security import create_access_token
     for student in students_data:
-        student_token = create_access_token(student.id)
+        student_token = create_access_token({"sub": str(student.id)})
         student_headers = {"Authorization": f"Bearer {student_token}"}
         await client.post(
             "/api/v1/classrooms/join",
@@ -545,7 +545,8 @@ async def test_analytics_unauthorized_classroom(
         email="other_teacher@test.com",
         phone_number="+9876543210",
         hashed_password="hashedpass",
-        full_name="Other Teacher"
+        full_name="Other Teacher",
+        role=UserRole.TEACHER
     )
     session.add(other_teacher)
     session.commit()
@@ -553,7 +554,7 @@ async def test_analytics_unauthorized_classroom(
     
     # Other teacher creates classroom
     from app.core.security import create_access_token
-    other_token = create_access_token(other_teacher.id)
+    other_token = create_access_token({"sub": str(other_teacher.id)})
     other_headers = {"Authorization": f"Bearer {other_token}"}
     
     classroom_response = await client.post(

@@ -40,6 +40,12 @@ def sync_push_attempts(
     
     for attempt_data in sync_data.attempts:
         try:
+            # Verify question exists
+            question = db.query(Question).filter(Question.id == attempt_data.question_id).first()
+            if not question:
+                failed_count += 1
+                continue
+
             # Check for duplicate (same device, same question, same time)
             existing = db.query(Attempt).filter(
                 and_(
@@ -97,9 +103,11 @@ def sync_push_attempts(
             )
             
             db.add(new_attempt)
+            db.flush()  # Catch integrity errors early
             synced_count += 1
             
         except Exception as e:
+            db.rollback()
             failed_count += 1
             print(f"Failed to sync attempt: {e}")
     
@@ -287,13 +295,13 @@ def _calculate_weak_topics(db: Session, user_id: int, threshold: float = 0.5) ->
     ).group_by(
         Question.topic
     ).having(
-        func.count(Attempt.id) >= 5  # Need at least 5 attempts to judge
+        func.count(Attempt.id) >= 1  # Reduced from 5 for better feedback
     ).all()
     
     weak_topics = []
     for topic, total, correct in results:
         accuracy = (correct or 0) / total if total > 0 else 0
-        if accuracy < threshold:
+        if accuracy <= threshold:
             weak_topics.append(topic)
     
     return weak_topics

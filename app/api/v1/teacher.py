@@ -20,8 +20,7 @@ from app.core.security import get_current_user
 from app.schemas.schemas import (
     TeacherAIRequest, 
     TeacherAIResponse, 
-    ApproveQuizRequest,
-    AssignmentResponse
+    ApproveQuizRequest
 )
 
 router = APIRouter()
@@ -89,6 +88,7 @@ class AssignmentResponse(BaseModel):
 class StudentPerformance(BaseModel):
     """Individual student performance in a classroom."""
     user_id: int
+    student_id: int  # Alias for user_id for backward compatibility
     full_name: str
     total_attempts: int
     correct_attempts: int
@@ -118,6 +118,8 @@ class ClassroomAnalytics(BaseModel):
     # Overall metrics
     total_attempts: int
     average_accuracy: float
+    class_accuracy: float  # Alias for average_accuracy for backward compatibility
+    average_confidence: float
     
     # Psychometric insights
     avg_time_per_question_ms: Optional[float]
@@ -126,9 +128,11 @@ class ClassroomAnalytics(BaseModel):
     
     # Per-student breakdown
     students: List[StudentPerformance]
+    student_performance: List[StudentPerformance] = []  # Alias for backward compatibility
     
     # Per-topic breakdown
     topics: List[TopicPerformance]
+    topic_performance: List[TopicPerformance] = []  # Alias for backward compatibility
 
 
 # ============= Endpoints =============
@@ -298,15 +302,18 @@ async def get_classroom_analytics(
     Powered by psychometric data from attempts.
     """
     # Verify teacher owns this classroom
-    classroom = db.query(Classroom).filter(
-        Classroom.id == classroom_id,
-        Classroom.teacher_id == current_user.id
-    ).first()
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
     
     if not classroom:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Classroom not found or you don't have permission"
+            detail="Classroom not found"
+        )
+    
+    if classroom.teacher_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to view this classroom's analytics"
         )
     
     # Get student IDs in this classroom
@@ -320,11 +327,15 @@ async def get_classroom_analytics(
             active_students=0,
             total_attempts=0,
             average_accuracy=0.0,
+            class_accuracy=0.0,
+            average_confidence=0.0,
             avg_time_per_question_ms=None,
             guessing_rate=0.0,
             struggle_rate=0.0,
             students=[],
-            topics=[]
+            student_performance=[],
+            topics=[],
+            topic_performance=[]
         )
     
     # Calculate per-student performance
@@ -337,7 +348,8 @@ async def get_classroom_analytics(
         if not attempts:
             students_performance.append(StudentPerformance(
                 user_id=student_id,
-                full_name=user.full_name or "Unknown",
+                student_id=student_id,
+                full_name=user.full_name or user.username or "Unknown",
                 total_attempts=0,
                 correct_attempts=0,
                 accuracy=0.0,
@@ -372,7 +384,8 @@ async def get_classroom_analytics(
         
         students_performance.append(StudentPerformance(
             user_id=student_id,
-            full_name=user.full_name or "Unknown",
+            student_id=student_id,
+            full_name=user.full_name or user.username or "Unknown",
             total_attempts=total,
             correct_attempts=correct,
             accuracy=round(accuracy, 2),
@@ -399,14 +412,15 @@ async def get_classroom_analytics(
     topics = []
     for topic, total, accuracy, avg_conf in topic_stats:
         # Count students struggling with this topic (< 50% accuracy)
-        struggling = db.query(func.count(func.distinct(Attempt.user_id))).filter(
+        struggling_query = db.query(Attempt.user_id).filter(
             Attempt.user_id.in_(student_ids),
             Attempt.question_id.in_(
                 db.query(Question.id).filter(Question.topic == topic)
             )
         ).group_by(Attempt.user_id).having(
             func.avg(case((Attempt.is_correct, 1), else_=0)) < 0.5
-        ).scalar() or 0
+        )
+        struggling = db.query(func.count()).select_from(struggling_query.subquery()).scalar() or 0
         
         topics.append(TopicPerformance(
             topic=topic,
@@ -421,6 +435,10 @@ async def get_classroom_analytics(
     total_attempts = len(all_attempts)
     correct_attempts = sum(1 for a in all_attempts if a.is_correct)
     avg_accuracy = (correct_attempts / total_attempts * 100) if total_attempts > 0 else 0
+    
+    # Average confidence
+    confidences = [a.confidence_level for a in all_attempts if a.confidence_level is not None]
+    avg_confidence = sum(confidences) / len(confidences) if confidences else 0
     
     # Active students (attempts in last 7 days)
     week_ago = datetime.utcnow() - timedelta(days=7)
@@ -446,11 +464,15 @@ async def get_classroom_analytics(
         active_students=active_students,
         total_attempts=total_attempts,
         average_accuracy=round(avg_accuracy, 2),
+        class_accuracy=round(avg_accuracy, 2),
+        average_confidence=round(avg_confidence, 2),
         avg_time_per_question_ms=round(avg_time_class, 2) if avg_time_class else None,
         guessing_rate=round(guessing_rate_class, 2),
         struggle_rate=round(struggle_rate_class, 2),
         students=students_performance,
-        topics=topics
+        student_performance=students_performance,
+        topics=topics,
+        topic_performance=topics
     )
 
 

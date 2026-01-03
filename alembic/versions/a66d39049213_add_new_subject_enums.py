@@ -23,9 +23,14 @@ def upgrade() -> None:
     # This only applies to PostgreSQL; SQLite doesn't use real enums
     connection = op.get_bind()
     if connection.dialect.name == 'postgresql':
-        op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Government'")
-        op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Civic Education'")
-        op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Financial Accounting'")
+        # Check if the type exists first to avoid "type does not exist" error
+        # This can happen if migrations are run on a fresh database where the type 
+        # is created in a later migration (like d0d79fcca71f)
+        check_type = connection.execute(sa.text("SELECT 1 FROM pg_type WHERE typname = 'subject'")).fetchone()
+        if check_type:
+            op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Government'")
+            op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Civic Education'")
+            op.execute("ALTER TYPE subject ADD VALUE IF NOT EXISTS 'Financial Accounting'")
 
 
 def downgrade() -> None:

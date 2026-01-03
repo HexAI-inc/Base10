@@ -5,19 +5,20 @@ from typing import List, Callable
 from app.models.user import User
 
 
+import enum
+
 # Define role hierarchy
-class UserRole:
+class UserRole(str, enum.Enum):
     """User role constants."""
     STUDENT = "student"
     TEACHER = "teacher"
     ADMIN = "admin"
-    
-    ALL_ROLES = [STUDENT, TEACHER, ADMIN]
+    MODERATOR = "moderator"
     
     @classmethod
     def validate(cls, role: str) -> bool:
         """Check if role is valid."""
-        return role in cls.ALL_ROLES
+        return role in [r.value for r in cls]
 
 
 def require_role(allowed_roles: List[str]):

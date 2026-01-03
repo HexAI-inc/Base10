@@ -19,10 +19,10 @@ class Subject(str, enum.Enum):
 
 class UserRole(str, enum.Enum):
     """Platform user roles."""
-    STUDENT = "STUDENT"
-    TEACHER = "TEACHER"
-    ADMIN = "ADMIN"
-    MODERATOR = "MODERATOR"
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
+    MODERATOR = "moderator"
 
 class AssetType(str, enum.Enum):
     """Types of media assets."""

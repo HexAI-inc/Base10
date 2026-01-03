@@ -10,7 +10,7 @@ import logging
 from app.db.session import get_db
 from app.models.classroom import Classroom, ClassroomPost, ClassroomMaterial, Assignment, Submission, classroom_students
 from app.models.user import User
-from app.models.enums import UserRole
+from app.models.enums import UserRole, Subject, GradeLevel
 from app.models.student_profile import StudentProfile, TeacherMessage
 from app.models.progress import Attempt
 from app.core.security import get_current_user
@@ -122,8 +122,16 @@ async def get_class_stream(classroom_id: int, db: Session = Depends(get_db), use
     return posts
 
 
+class ClassroomCreate(BaseModel):
+    """Schema for creating a classroom."""
+    name: str = Field(..., min_length=3, max_length=100, description="Classroom name")
+    description: Optional[str] = Field(None, max_length=500)
+    subject: Optional[Subject] = None
+    grade_level: Optional[GradeLevel] = None
+
+
 @router.post("/classrooms", status_code=status.HTTP_201_CREATED)
-async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+async def create_classroom(classroom_data: ClassroomCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Create a new classroom.
     
@@ -142,8 +150,10 @@ async def create_classroom(classroom_data: dict, db: Session = Depends(get_db), 
     join_code = Classroom.generate_join_code()
     classroom = Classroom(
         teacher_id=user.id,
-        name=classroom_data.get('name'),
-        description=classroom_data.get('description'),
+        name=classroom_data.name,
+        description=classroom_data.description,
+        subject=classroom_data.subject,
+        grade_level=classroom_data.grade_level,
         join_code=join_code
     )
     db.add(classroom)
