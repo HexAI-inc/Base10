@@ -205,11 +205,12 @@ async def test_sync_pull_delta(
     Critical for data efficiency.
     """
     # Get initial timestamp
-    last_sync = datetime.utcnow().isoformat()
+    last_sync = datetime.utcnow()
     
-    # Pull questions
-    pull_res = await client.get(
-        f"/api/v1/sync/pull?last_sync={last_sync}",
+    # Pull questions using POST with body (matching the actual endpoint)
+    pull_res = await client.post(
+        "/api/v1/sync/pull",
+        json={"last_sync_timestamp": last_sync.isoformat()},
         headers=auth_headers
     )
     

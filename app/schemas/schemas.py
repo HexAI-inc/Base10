@@ -260,9 +260,7 @@ class SyncPullRequest(BaseModel):
     - If last_sync_timestamp provided: Return only questions where updated_at > last_sync_timestamp
     """
     last_sync_timestamp: Optional[datetime] = None  # Delta sync: only get changes since this time
-    subjects: Optional[List[str]] = None  # Filter by subjects
-    limit: int = Field(default=200, le=500)  # Mobile storage constraint
-    subjects: Optional[List[Subject]] = None
+    subjects: Optional[List[Subject]] = None  # Filter by subjects
     limit: int = Field(default=50, le=200)  # Max 200 questions per sync
 
 
