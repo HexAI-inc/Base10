@@ -26,6 +26,8 @@ wheels/
 # Environment
 .env
 .env.local
+.env.backup
+.env.*.local
 
 # IDEs
 .vscode/
