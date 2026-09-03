@@ -41,7 +41,7 @@ export default function SubmissionsPage({ params }: any) {
     if (isNaN(score)) return
     try {
       setActionLoading(submissionId)
-      await classroomApi.gradeSubmission(submissionId, { score })
+      await classroomApi.gradeSubmission(submissionId, { grade: score })
       
       // Show notification feedback with emoji based on score
       const percentage = (score / 100) * 100 // Assuming max points, adjust as needed

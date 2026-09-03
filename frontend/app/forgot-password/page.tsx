@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
     try {
       await recoveryApi.resetPassword({
         identifier,
-        otp,
+        otp_code: otp,
         new_password: newPassword
       })
       setStep('success')

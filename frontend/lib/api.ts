@@ -43,13 +43,14 @@ export const authApi = {
 }
 
 // Recovery endpoints
+// Note: recovery.router is mounted under /auth in main.py, not /recovery.
 export const recoveryApi = {
-  forgotPassword: (identifier: string) => 
-    api.post('/recovery/forgot-password', { identifier }),
-  resetPassword: (data: { identifier: string; otp: string; new_password: string }) => 
-    api.post('/recovery/reset-password', data),
-  verifyOtp: (identifier: string, otp: string) => 
-    api.post('/recovery/verify-otp', { identifier, otp }),
+  forgotPassword: (identifier: string) =>
+    api.post('/auth/forgot-password', { identifier }),
+  resetPassword: (data: { identifier: string; otp_code: string; new_password: string }) =>
+    api.post('/auth/reset-password', data),
+  verifyOtp: (identifier: string, otp_code: string) =>
+    api.post('/auth/verify-otp', { identifier, otp_code }),
 }
 
 // Question endpoints
@@ -85,7 +86,8 @@ export const aiApi = {
     difficulty?: string;
     num_questions?: number;
   }) =>
-    api.post('/ai/quiz', data, { timeout: 120000 }),
+    // /ai/generate-quiz takes query params, not a JSON body
+    api.post('/ai/generate-quiz', null, { params: data, timeout: 120000 }),
   getRecommendations: () => api.get('/ai/recommendations', { timeout: 30000 }), // 30s timeout for dashboard
   getStatus: () => api.get('/ai/status'),
 }
@@ -95,13 +97,22 @@ export const studentApi = {
   getDashboard: () => api.get('/student/dashboard'),
   getDashboardSummary: () => api.get('/student/dashboard/summary'),
   getSubjects: () => api.get('/student/subjects'),
-  getAnalytics: () => api.get('/student/dashboard/analytics'),
 }
 
-// Billing endpoints
+// Billing endpoints (HPG - not yet wired to a checkout page)
 export const billingApi = {
   getPlans: () => api.get('/billing/plans'),
-  initializePayment: (plan_id: string) => api.post('/billing/initialize', { plan_id }),
+  initializePayment: (data: {
+    plan_id: string;
+    email: string;
+    currency?: string;
+    provider?: string;
+    success_url: string;
+    error_url: string;
+  }) => api.post('/billing/initialize', data),
+  getSubscription: () => api.get('/billing/subscription'),
+  getTransactions: () => api.get('/billing/transactions'),
+  cancelSubscription: () => api.post('/billing/cancel'),
 }
 
 // Admin endpoints
@@ -160,31 +171,31 @@ export const classroomApi = {
   getClassroom: (classroomId: number) => api.get(`/classrooms/${classroomId}`),
   getClassroomMembers: (classroomId: number) => api.get(`/classrooms/${classroomId}/members`),
   updateClassroom: (classroomId: number, data: { name?: string; description?: string; subject?: string; grade_level?: string }) =>
-    api.put(`/classrooms/${classroomId}`, data),
+    api.patch(`/classrooms/${classroomId}`, data),
   deleteClassroom: (classroomId: number) => api.delete(`/classrooms/${classroomId}`),
 
   // Stream / Posts
   getStream: (classroomId: number) => api.get(`/classrooms/${classroomId}/stream`),
-  postAnnouncement: (classroomId: number, data: { content: string; post_type: string; attachment_url?: string }) =>
-    api.post(`/classrooms/${classroomId}/announce`, data),
+  postAnnouncement: (classroomId: number, data: { content: string; attachment_url?: string }) =>
+    api.post(`/classrooms/${classroomId}/stream`, data),
   commentOnPost: (classroomId: number, postId: number, data: { content: string }) =>
     api.post(`/classrooms/${classroomId}/stream/${postId}/comment`, data),
 
   // Assignments & submissions
   createManualAssignment: (classroomId: number, data: any) =>
-    api.post(`/classrooms/${classroomId}/assignments/manual`, data),
+    api.post(`/classrooms/${classroomId}/assignments`, { classroom_id: classroomId, ...data }),
   getAssignments: (classroomId: number) => api.get(`/classrooms/${classroomId}/assignments`),
-  updateAssignment: (assignmentId: number, data: { title?: string; description?: string; due_date?: string; total_points?: number }) =>
+  updateAssignment: (assignmentId: number, data: { title?: string; description?: string; due_date?: string; max_points?: number }) =>
     api.put(`/classrooms/assignments/${assignmentId}`, data),
   deleteAssignment: (assignmentId: number) => api.delete(`/classrooms/assignments/${assignmentId}`),
   getSubmissions: (assignmentId: number) => api.get(`/classrooms/assignments/${assignmentId}/submissions`),
-  gradeSubmission: (submissionId: number, data: { score: number; feedback?: string }) =>
+  gradeSubmission: (submissionId: number, data: { grade: number; feedback?: string }) =>
     api.post(`/classrooms/submissions/${submissionId}/grade`, data),
 
   // Materials
   uploadMaterial: (classroomId: number, data: any) => api.post(`/classrooms/${classroomId}/materials`, data),
   getMaterials: (classroomId: number) => api.get(`/classrooms/${classroomId}/materials`),
-  updateMaterial: (materialId: number, data: { title?: string; description?: string; material_url?: string }) =>
+  updateMaterial: (materialId: number, data: { title?: string; description?: string; url?: string }) =>
     api.put(`/classrooms/materials/${materialId}`, data),
   deleteMaterial: (materialId: number) => api.delete(`/classrooms/materials/${materialId}`),
 
@@ -193,7 +204,7 @@ export const classroomApi = {
     api.post(`/classrooms/${classroomId}/ask-ai`, { question }),
 
   // Teacher insights
-  getClassInsights: (classroomId: number) => api.get(`/ai/teacher/insights/${classroomId}`),
+  getClassInsights: (classroomId: number) => api.get(`/ai-teacher/teacher/insights/${classroomId}`),
 
   // Student Profile Management
   getStudentProfile: (classroomId: number, studentId: number) =>
@@ -210,7 +221,7 @@ export const classroomApi = {
   sendStudentMessage: (classroomId: number, studentId: number, data: {
     subject?: string;
     message: string;
-    type: string;
+    message_type: string;
   }) => api.post(`/classrooms/${classroomId}/students/${studentId}/message`, data),
   getStudentMessages: (classroomId: number, studentId: number) =>
     api.get(`/classrooms/${classroomId}/students/${studentId}/messages`),

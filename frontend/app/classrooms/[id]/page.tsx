@@ -61,7 +61,7 @@ export default function ClassroomPage() {
 
   const handlePost = async (content: string) => {
     try {
-      await classroomApi.postAnnouncement(classroomId, { content, post_type: 'announcement' })
+      await classroomApi.postAnnouncement(classroomId, { content })
       await load()
     } catch (err) {
       console.error('Failed to post announcement', err)
