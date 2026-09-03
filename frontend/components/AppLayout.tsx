@@ -10,6 +10,7 @@ import ScientificCalc from '@/components/ScientificCalc'
 import OnboardingWizard from '@/components/OnboardingWizard'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
+import { initOfflineSync } from '@/lib/offline'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -29,6 +30,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
         setShowOnboarding(true)
       }
     }
+  }, [user])
+
+  useEffect(() => {
+    // Drains any attempts queued while offline, and again whenever
+    // connectivity returns - see lib/offline.ts.
+    if (!user) return
+    return initOfflineSync()
   }, [user])
 
   useEffect(() => {

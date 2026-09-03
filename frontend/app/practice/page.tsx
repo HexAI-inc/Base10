@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { questionApi } from '@/lib/api'
+import { queueAttempt, flushPendingAttempts, cacheQuestions, getCachedQuestions } from '@/lib/offline'
 import QuestionCard from '@/components/QuestionCard'
 import SyncStatus from '@/components/SyncStatus'
 import AppLayout from '@/components/AppLayout'
@@ -61,24 +62,41 @@ function PracticeContent() {
   const loadQuestions = async () => {
     setLoading(true)
     setError('')
+    const cacheKey = `${subject}_${difficulty}`
     try {
       const response = await questionApi.getRandomQuestions(subject, 10, difficulty.toLowerCase())
       const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
-      
+
       if (!data || !Array.isArray(data) || data.length === 0) {
         throw new Error('No questions available')
       }
-      
+
       setQuestions(data)
       setCurrentIndex(0)
       setScore(0)
       questionStartRef.current = Date.now()
+      // Cache this batch so practice can still start if we're offline
+      // next time this subject/difficulty is picked.
+      cacheQuestions(cacheKey, data).catch(() => {})
     } catch (err: any) {
-      if (err.response?.status === 422) {
+      const isNetworkError = !err.response
+      if (isNetworkError) {
+        const cached = await getCachedQuestions<Question>(cacheKey)
+        if (cached && cached.length > 0) {
+          setQuestions(cached)
+          setCurrentIndex(0)
+          setScore(0)
+          questionStartRef.current = Date.now()
+          setError('')
+          setLoading(false)
+          return
+        }
+        setError(`You're offline and no cached ${subject} questions are available yet. Connect once to download some for offline use.`)
+      } else if (err.response?.status === 422) {
         setError(`No questions available for ${subject} yet. Try Mathematics, Physics, or Biology.`)
       } else {
-        const errorMessage = typeof err.response?.data?.detail === 'string' 
-          ? err.response.data.detail 
+        const errorMessage = typeof err.response?.data?.detail === 'string'
+          ? err.response.data.detail
           : `Failed to load questions for ${subject}. Please try another subject.`
         setError(errorMessage)
       }
@@ -96,20 +114,17 @@ function PracticeContent() {
       setScore(score + 1)
     }
 
-    // Best-effort: record the attempt server-side so dashboard stats,
-    // streaks and spaced-repetition scheduling actually reflect practice.
-    // Not blocking the UI on this - if it's offline or fails, the student
-    // keeps going and just doesn't get credit for this one attempt (there's
-    // no offline queue/sync wired up on the frontend yet to retry later).
-    questionApi.submitAnswer({
+    // Offline-first: queue the attempt locally first so it's never lost
+    // regardless of connectivity, then try to flush the whole queue right
+    // away. If we're offline or the flush fails, it just stays queued -
+    // AppLayout's initOfflineSync() retries automatically on reconnect.
+    queueAttempt({
       question_id: currentQuestion.id,
       selected_option: selectedIndex,
       is_correct: isCorrect,
       attempted_at: new Date().toISOString(),
       time_taken_ms: timeTakenMs,
-    }).catch((err) => {
-      console.warn('Failed to record attempt:', err)
-    })
+    }).then(() => flushPendingAttempts())
   }
 
   const nextQuestion = () => {

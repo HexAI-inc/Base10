@@ -291,6 +291,29 @@ export const onboardingApi = {
   }) => api.post('/onboarding/teacher', data),
 }
 
+// Leaderboard endpoints
+export const leaderboardApi = {
+  getWeekly: () => api.get('/leaderboard/weekly'),
+  getMonthly: () => api.get('/leaderboard/monthly'),
+  getMyRank: () => api.get('/leaderboard/my-rank'),
+}
+
+// Sync endpoints (offline-first: queue attempts locally, push in batches)
+export const syncApi = {
+  push: (attempts: Array<{
+    question_id: number;
+    selected_option: number;
+    is_correct: boolean;
+    attempted_at: string;
+    device_id?: string;
+    time_taken_ms?: number;
+    confidence_level?: number;
+  }>, device_id: string) => api.post('/sync/push', { attempts, device_id }),
+  pull: (params?: { last_sync_timestamp?: string; subjects?: string[]; limit?: number }) =>
+    api.post('/sync/pull', params || {}),
+  getStats: () => api.get('/sync/stats'),
+}
+
 // Marketing endpoints
 export const marketingApi = {
   joinWaitlist: (data: {
