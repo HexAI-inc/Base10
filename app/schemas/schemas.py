@@ -96,7 +96,7 @@ class Token(BaseModel):
 
 
 class DashboardStats(BaseModel):
-    """User dashboard statistics."""
+    """Comprehensive user dashboard statistics (GET /student/dashboard)."""
     total_attempts: int
     overall_accuracy: float
     streak_days: int
@@ -111,6 +111,19 @@ class DashboardStats(BaseModel):
     recommendations: List[Dict[str, Any]]
     time_analytics: Dict[str, Any]
     classmate_comparison: Dict[str, Any]
+
+
+class DashboardSummary(BaseModel):
+    """Lightweight dashboard summary for the mobile/web home screen
+    (GET /student/dashboard/summary) - key metrics only, none of the
+    full analytics breakdown DashboardStats carries."""
+    total_attempts: int
+    overall_accuracy: float
+    streak_days: int
+    study_time_hours: float
+    due_reviews: int
+    today_attempts: int
+    has_target_exam: bool
 
 
 # ============= Onboarding Schemas =============

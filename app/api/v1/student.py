@@ -13,7 +13,7 @@ from app.models.question import Question, Subject, DifficultyLevel
 from app.models.progress import Attempt
 from app.models.classroom import Classroom, classroom_students
 from app.api.v1.auth import get_current_user
-from app.schemas.schemas import DashboardStats, UserStats, SubjectStats
+from app.schemas.schemas import DashboardStats, DashboardSummary, UserStats, SubjectStats
 from app.services.ai_service import generate_ai_recommendations
 
 router = APIRouter()
@@ -645,7 +645,7 @@ async def get_student_dashboard(
     }
 
 
-@router.get("/dashboard/summary", response_model=DashboardStats)
+@router.get("/dashboard/summary", response_model=DashboardSummary)
 def get_dashboard_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
