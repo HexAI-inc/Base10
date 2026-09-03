@@ -1,4 +1,5 @@
 """Authentication API endpoints."""
+import random
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,11 +9,14 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.schemas import UserCreate, UserLogin, UserResponse, Token
+from app.models.otp import OTP
+from app.models.enums import UserRole, OTPType
+from app.schemas.schemas import UserCreate, UserLogin, UserResponse, Token, VerifyCodeRequest
 from app.services.onboarding_service import OnboardingService
-from app.models.enums import UserRole
+from app.services.comms_service import CommunicationService, MessageType, MessagePriority
 
 router = APIRouter()
+comms = CommunicationService()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
@@ -252,19 +256,94 @@ async def resend_verification_email(
     return {"message": "Verification email sent successfully"}
 
 
-@router.post("/verify-sms")
-def verify_sms_code(phone: str, code: str, db: Session = Depends(get_db)):
+@router.post("/send-verification-code")
+async def send_verification_code(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    SMS verification (Phase 3).
-    TODO: Integrate with Twilio or Africa's Talking
+    Generate and send a one-time verification code.
+
+    We don't have a paid SMS provider yet, so the code is delivered by
+    email (via Resend) instead - the account must have an email on
+    file for this to work. In non-production environments the code is
+    also echoed back in the response so this can be tested without a
+    working email provider.
     """
-    # Placeholder for SMS verification logic
-    user = db.query(User).filter(User.phone_number == phone).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # TODO: Verify code from Redis/SMS service
-    user.is_verified = True
+    if current_user.is_verified:
+        raise HTTPException(status_code=400, detail="Account already verified")
+
+    if not current_user.email:
+        raise HTTPException(
+            status_code=400,
+            detail="An email address is required to receive a verification code "
+                    "(SMS delivery isn't available yet)"
+        )
+
+    # Invalidate any previous unused phone-verification codes
+    db.query(OTP).filter(
+        OTP.user_id == current_user.id,
+        OTP.purpose == OTPType.PHONE_VERIFY,
+        OTP.is_used == False
+    ).update({"is_used": True})
+
+    code = f"{random.randint(1000, 9999)}"
+    otp = OTP(
+        user_id=current_user.id,
+        code=code,
+        purpose=OTPType.PHONE_VERIFY,
+        expires_at=datetime.utcnow() + timedelta(minutes=15)
+    )
+    db.add(otp)
     db.commit()
-    
-    return {"status": "verified", "message": "Phone number verified successfully"}
+
+    comms.send_notification(
+        user_id=current_user.id,
+        message_type=MessageType.PHONE_VERIFICATION,
+        priority=MessagePriority.CRITICAL,
+        title="Your Base10 verification code",
+        body=f"Your Base10 verification code is: {code}. Valid for 15 minutes.",
+        user_email=current_user.email,
+        has_app_installed=False
+    )
+
+    return {
+        "message": "Verification code sent to your email",
+        "expires_in_minutes": 15,
+        # DEVELOPMENT ONLY - lets this be tested without a live Resend key
+        "dev_code": code if settings.ENVIRONMENT != "production" else None
+    }
+
+
+@router.post("/verify-code")
+def verify_code(
+    request: VerifyCodeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Verify the current user's account with the code from /send-verification-code."""
+    if current_user.is_verified:
+        raise HTTPException(status_code=400, detail="Account already verified")
+
+    otp = db.query(OTP).filter(
+        OTP.user_id == current_user.id,
+        OTP.purpose == OTPType.PHONE_VERIFY,
+        OTP.is_used == False
+    ).order_by(OTP.created_at.desc()).first()
+
+    if not otp or not otp.is_valid():
+        raise HTTPException(status_code=400, detail="No valid verification code found - request a new one")
+
+    if otp.code != request.code:
+        otp.attempts += 1
+        db.commit()
+        remaining = max(otp.max_attempts - otp.attempts, 0)
+        raise HTTPException(status_code=400, detail=f"Incorrect code. {remaining} attempts remaining")
+
+    otp.is_used = True
+    otp.used_at = datetime.utcnow()
+    current_user.is_verified = True
+    current_user.verified_at = datetime.utcnow()
+    db.commit()
+
+    return {"status": "verified", "message": "Account verified successfully"}

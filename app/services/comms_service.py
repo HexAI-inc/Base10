@@ -32,6 +32,7 @@ class MessageType(Enum):
     STREAK_REMINDER = "streak_reminder"
     REVIEW_DUE = "review_due"
     PASSWORD_RESET = "password_reset"
+    PHONE_VERIFICATION = "phone_verification"
     WEEKLY_REPORT = "weekly_report"
     MONTHLY_REPORT = "monthly_report"
     ACHIEVEMENT_UNLOCKED = "achievement_unlocked"
@@ -122,6 +123,7 @@ class CommunicationService:
             user_email and (
                 message_type in [
                     MessageType.PASSWORD_RESET,
+                    MessageType.PHONE_VERIFICATION,
                     MessageType.WEEKLY_REPORT,
                     MessageType.MONTHLY_REPORT
                 ] or

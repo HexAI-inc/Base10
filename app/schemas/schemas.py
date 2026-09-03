@@ -67,6 +67,11 @@ class UserLogin(BaseModel):
     password: str
 
 
+class VerifyCodeRequest(BaseModel):
+    """Schema for verifying an account with a one-time code."""
+    code: str = Field(..., min_length=4, max_length=4)
+
+
 class UserResponse(UserBase):
     """Schema for user data in responses."""
     id: int
