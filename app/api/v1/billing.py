@@ -55,7 +55,7 @@ class Plan(BaseModel):
     name: str = Field(..., description="Display name")
     description: str = Field(..., description="Plan features description")
     price: int = Field(..., description="Price in base currency units")
-    currency: Currency = Field(default=Currency.NGN, description="Currency code")
+    currency: Currency = Field(default=Currency.GMD, description="Currency code")
     duration_days: int = Field(..., description="Plan duration in days")
     features: List[str] = Field(..., description="List of features included")
     is_popular: bool = Field(default=False, description="Mark as popular/recommended")
@@ -65,7 +65,7 @@ class InitializePaymentRequest(BaseModel):
     """Request to start a payment transaction."""
     plan_id: str = Field(..., description="The plan to subscribe to")
     email: EmailStr = Field(..., description="User's email for payment receipt")
-    currency: Currency = Field(default=Currency.NGN, description="Payment currency")
+    currency: Currency = Field(default=Currency.GMD, description="Payment currency")
     provider: str = Field(default="WAVE", description="Payment rail: WAVE, APS, or WAYCHIT_CARD")
     success_url: str = Field(..., description="Where to redirect the user after a successful payment")
     error_url: str = Field(..., description="Where to redirect the user after a failed payment")
@@ -87,7 +87,7 @@ PLANS = [
         name="Basic",
         description="Essential features for exam preparation",
         price=0,
-        currency=Currency.NGN,
+        currency=Currency.GMD,
         duration_days=365,
         features=[
             "Unlimited offline questions",
@@ -102,8 +102,9 @@ PLANS = [
         id="premium",
         name="Exam Master",
         description="Advanced features for serious students",
-        price=500,  # 500 Naira/month (~$0.50 USD)
-        currency=Currency.NGN,
+        price=500,  # NOTE: value inherited from the old NGN pricing (~500 Naira/month, ~$0.50 USD) -
+                    # currency below is now GMD but this number hasn't been repriced for GMD, needs a business decision
+        currency=Currency.GMD,
         duration_days=30,
         features=[
             "Everything in Basic",
@@ -120,8 +121,8 @@ PLANS = [
         id="school",
         name="School License",
         description="Complete solution for educational institutions",
-        price=50000,  # 50,000 Naira/year for up to 500 students
-        currency=Currency.NGN,
+        price=50000,  # NOTE: inherited NGN pricing (~50,000 Naira/year), not yet repriced for GMD
+        currency=Currency.GMD,
         duration_days=365,
         features=[
             "Everything in Premium",
