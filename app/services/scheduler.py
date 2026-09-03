@@ -151,56 +151,24 @@ def send_daily_review_reminders():
 
 def calculate_weekly_leaderboard():
     """
-    Calculate weekly leaderboard rankings.
-    
-    Ranking criteria:
-    1. Total questions attempted
-    2. Accuracy percentage
-    3. Study streak
-    
-    Store results in Redis cache for fast API access.
+    Calculate weekly and monthly leaderboard rankings and cache both in
+    Redis for fast API access (see app.services.leaderboard_service for
+    the shared computation - the API falls back to computing on demand
+    if this job hasn't run yet or Redis is unavailable).
     """
+    from app.services.leaderboard_service import compute_leaderboard
+
     db = next(get_db())
-    
+
     try:
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        
-        # Calculate user scores for this week
-        leaderboard = db.query(
-            User.id,
-            User.full_name,
-            func.count(Attempt.id).label('attempts'),
-            (func.sum(func.cast(Attempt.is_correct, db.Integer)) * 100.0 / 
-             func.count(Attempt.id)).label('accuracy')
-        ).join(
-            Attempt, Attempt.user_id == User.id
-        ).filter(
-            Attempt.attempted_at >= week_ago
-        ).group_by(
-            User.id, User.full_name
-        ).order_by(
-            func.count(Attempt.id).desc(),
-            (func.sum(func.cast(Attempt.is_correct, db.Integer)) * 100.0 / 
-             func.count(Attempt.id)).desc()
-        ).limit(100).all()
-        
-        # Format leaderboard for Redis cache
-        leaderboard_data = [
-            {
-                'rank': idx + 1,
-                'user_id': user.id,
-                'name': user.full_name,
-                'attempts': user.attempts,
-                'accuracy': round(user.accuracy, 2)
-            }
-            for idx, user in enumerate(leaderboard)
-        ]
-        
-        # Store in Redis cache for fast API access
-        redis_client.set_leaderboard(leaderboard_data, period="weekly", ttl=86400)  # 24h cache
-        
-        logger.info(f"✅ Weekly leaderboard calculated and cached: {len(leaderboard)} users")
-    
+        weekly_data = compute_leaderboard(db, days=7, limit=100)
+        redis_client.set_leaderboard(weekly_data, period="weekly", ttl=86400)  # 24h cache
+        logger.info(f"✅ Weekly leaderboard calculated and cached: {len(weekly_data)} users")
+
+        monthly_data = compute_leaderboard(db, days=30, limit=100)
+        redis_client.set_leaderboard(monthly_data, period="monthly", ttl=86400)
+        logger.info(f"✅ Monthly leaderboard calculated and cached: {len(monthly_data)} users")
+
     except Exception as e:
         logger.error(f"❌ Leaderboard calculation failed: {e}")
     finally:
