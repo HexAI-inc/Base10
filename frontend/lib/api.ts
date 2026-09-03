@@ -62,7 +62,7 @@ export const questionApi = {
     }
     // Encode subject to handle spaces and special characters
     const encodedSubject = encodeURIComponent(subject)
-    return api.get(`/questions/random/${encodedSubject}`, { params })
+    return api.get(`/questions/practice/${encodedSubject}`, { params })
   },
   submitAnswer: (data: { question_id: number; user_answer: string }) =>
     api.post('/questions/submit', data),
