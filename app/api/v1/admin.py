@@ -20,7 +20,9 @@ from app.models.progress import Attempt
 from app.models.classroom import Classroom, Assignment
 from app.models.report import QuestionReport, ReportReason
 from app.models.flashcard import FlashcardDeck, Flashcard, FlashcardReview
+from app.models.admin_activity_log import AdminActivityLog as AdminActivityLogModel
 from app.core.security import get_current_user
+from app.services.audit_service import log_admin_action
 from app.schemas.schemas import (
     UserUpdateAdmin,
     AdminProfileResponse,
@@ -808,9 +810,16 @@ async def deactivate_user(
     
     user.is_active = False
     user.updated_at = datetime.now(timezone.utc)
+
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="user.deactivate",
+        action_description=f"Deactivated user {user_id} ({user.email or user.phone_number}). Reason: {reason}",
+        target_type="user", target_id=user_id,
+        metadata={"reason": reason}
+    )
     db.commit()
-    
-    # TODO: Log the action with reason in an audit log
+
     return {"status": "success", "message": f"User {user_id} deactivated", "reason": reason}
 
 
@@ -834,8 +843,16 @@ async def update_user_details(
     
     for key, value in update_data.items():
         setattr(user, key, value)
-    
+
     user.updated_at = datetime.now(timezone.utc)
+
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="user.update",
+        action_description=f"Updated user {user_id} ({user.email or user.phone_number}): {', '.join(update_data.keys())}",
+        target_type="user", target_id=user_id,
+        metadata={k: str(v) for k, v in update_data.items()}
+    )
     db.commit()
     db.refresh(user)
     
@@ -866,8 +883,15 @@ async def activate_user(
     
     user.is_active = True
     user.updated_at = datetime.now(timezone.utc)
+
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="user.activate",
+        action_description=f"Activated user {user_id} ({user.email or user.phone_number})",
+        target_type="user", target_id=user_id
+    )
     db.commit()
-    
+
     return {
         "message": "User activated successfully",
         "user_id": user_id,
@@ -894,12 +918,18 @@ async def delete_question(
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="question.delete",
+        action_description=f"Deleted question {question_id}. Reason: {reason}",
+        target_type="question", target_id=question_id,
+        metadata={"reason": reason}
+    )
+
     # Soft delete or hard delete based on preference
     db.delete(question)
     db.commit()
-    
-    # TODO: Log deletion in audit log
-    
+
     return {
         "message": "Question deleted successfully",
         "question_id": question_id,
@@ -992,8 +1022,16 @@ async def change_user_role(
     
     old_role = target_user.role
     target_user.role = role_data.new_role
+
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="user.role_change",
+        action_description=f"Changed user {user_id} ({target_user.email or target_user.phone_number}) role from '{old_role}' to '{role_data.new_role}'. Reason: {role_data.reason or 'Not provided'}",
+        target_type="user", target_id=user_id,
+        metadata={"old_role": str(old_role), "new_role": role_data.new_role, "reason": role_data.reason}
+    )
     db.commit()
-    
+
     logger.info(
         f"🔐 Admin {admin.id} ({admin.email}) changed user {user_id} ({target_user.email or target_user.phone_number}) "
         f"role from '{old_role}' to '{role_data.new_role}'. Reason: {role_data.reason or 'Not provided'}"
@@ -1077,10 +1115,18 @@ async def delete_user(
     user_identifier = target_user.email or target_user.phone_number or target_user.username
     user_role = target_user.role
     
+    log_admin_action(
+        db, admin_id=admin.id,
+        action_type="user.delete",
+        action_description=f"Deleted user {user_id} ({user_identifier}, role: {user_role})",
+        target_type="user", target_id=user_id,
+        metadata={"role": str(user_role)}
+    )
+
     # Delete user (cascade will handle related records)
     db.delete(target_user)
     db.commit()
-    
+
     logger.warning(
         f"🗑️  Admin {admin.id} ({admin.email}) deleted user {user_id} "
         f"({user_identifier}, role: {user_role})"
@@ -1340,23 +1386,47 @@ async def get_admin_activity(
 ):
     """
     Get admin activity logs.
-    
+
     Returns paginated list of actions performed by all admins in the system.
     Useful for audit trails and tracking system changes.
-    
-    Note: This is a placeholder implementation. For production, you should:
-    1. Create an AdminActivityLog model in the database
-    2. Log admin actions via middleware or decorators
-    3. Query the logs table here
-    
-    Current implementation returns mock data structure.
     """
-    # TODO: Implement actual activity logging with database table
-    # For now, return empty response with correct structure
-    
+    query = db.query(AdminActivityLogModel)
+    if action_type:
+        query = query.filter(AdminActivityLogModel.action_type == action_type)
+
+    total = query.count()
+    logs = query.order_by(AdminActivityLogModel.created_at.desc()) \
+        .offset((page - 1) * page_size).limit(page_size).all()
+
+    admin_ids = {log.admin_id for log in logs}
+    admins_by_id = {
+        u.id: u for u in db.query(User).filter(User.id.in_(admin_ids)).all()
+    } if admin_ids else {}
+
+    activities = [
+        AdminActivityLog(
+            id=log.id,
+            admin_id=log.admin_id,
+            admin_name=(
+                admins_by_id[log.admin_id].full_name
+                or admins_by_id[log.admin_id].email
+                or admins_by_id[log.admin_id].phone_number
+                or f"Admin {log.admin_id}"
+            ) if log.admin_id in admins_by_id else f"Admin {log.admin_id}",
+            action_type=log.action_type,
+            action_description=log.action_description,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            metadata=log.metadata_json,
+            ip_address=log.ip_address,
+            timestamp=log.created_at
+        )
+        for log in logs
+    ]
+
     return AdminActivityResponse(
-        activities=[],
-        total=0,
+        activities=activities,
+        total=total,
         page=page,
         page_size=page_size
     )
