@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Base10</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #334155;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #10b981 0%, #8b5cf6 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .button {
+      display: inline-block;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    }
+    .footer {
+      background-color: #f1f5f9;
+      padding: 30px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .feature-list {
+      background-color: #f8fafc;
+      border-left: 4px solid #8b5cf6;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="logo">Base10</h1>
+      <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 14px;">Master Your WAEC Exams</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <h2 style="color: #1e293b; font-size: 24px; margin: 0 0 20px 0;">
+        Hi {{userName}},
+      </h2>
+      
+      <h1 style="color: #8b5cf6; font-size: 28px; margin: 0 0 20px 0; font-weight: 800;">
+        Welcome to Your Teaching Dashboard! 👨‍🏫
+      </h1>
+
+      <p style="font-size: 16px; color: #475569; margin: 0 0 30px 0;">
+        Empower your students with Base10's comprehensive learning platform. Create classrooms, track progress, and drive results.
+      </p>
+
+      <!-- Verification CTA -->
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="{{verificationUrl}}" class="button">
+          Verify Your Email Address
+        </a>
+        <p style="font-size: 13px; color: #94a3b8; margin: 15px 0 0 0;">
+          This link expires in 24 hours
+        </p>
+      </div>
+
+      <!-- Getting Started -->
+      <div class="feature-list">
+        <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 18px;">
+          Get Started in 3 Steps:
+        </h3>
+        <p style="margin: 10px 0; font-size: 15px; color: #475569;">
+          ✅ Verify your email address
+        </p>
+        <p style="margin: 10px 0; font-size: 15px; color: #475569;">
+          🏫 Set up your first classroom
+        </p>
+        <p style="margin: 10px 0; font-size: 15px; color: #475569;">
+          👥 Invite students to join
+        </p>
+      </div>
+
+      <!-- Features -->
+      <h3 style="margin: 30px 0 20px 0; color: #1e293b; font-size: 18px;">
+        Teacher Tools:
+      </h3>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        <li style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+          🏫 <strong>Classroom Management:</strong> Organize your students easily
+        </li>
+        <li style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+          📊 <strong>Progress Tracking:</strong> Monitor individual & class performance
+        </li>
+        <li style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+          📈 <strong>Analytics Dashboard:</strong> Identify weak areas quickly
+        </li>
+        <li style="padding: 10px 0;">
+          ⚡ <strong>Quick Assignments:</strong> Create practice sessions instantly
+        </li>
+      </ul>
+
+      <!-- Fallback Link -->
+      <p style="font-size: 13px; color: #94a3b8; margin: 30px 0 0 0; padding: 20px; background-color: #f8fafc; border-radius: 8px;">
+        <strong>Can't click the button?</strong><br>
+        Copy and paste this link into your browser:<br>
+        <span style="color: #10b981; word-break: break-all;">{{verificationUrl}}</span>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p style="margin: 0 0 15px 0;">
+        <strong style="color: #1e293b;">Base10</strong><br>
+        Empowering teachers to drive student success
+      </p>
+      <p style="margin: 0 0 15px 0;">
+        <a href="mailto:support@base10.app" style="color: #10b981; text-decoration: none;">support@base10.app</a>
+      </p>
+      <p style="margin: 0; font-size: 12px;">
+        © 2025 Base10. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

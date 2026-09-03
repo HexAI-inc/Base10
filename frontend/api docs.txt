@@ -1,0 +1,3518 @@
+Base10 API
+ 1.0.0 
+OAS 3.1
+/openapi.json
+Offline-first education platform for rural African students
+
+Authorize
+Authentication
+
+
+POST
+/api/v1/auth/register
+Register
+
+Register new user (email or phone).
+
+Critical for rural students:
+
+Supports phone-only registration (no email required)
+Creates 7-day token for offline usage
+Parameters
+Cancel
+Reset
+No parameters
+
+Request body
+
+application/json
+{
+  "phone_number": "+220 3947425",
+  "email": "esjallow03@gmail.com",
+  "full_name": "Ebrima S Jallow",
+  "password": "Student@123"
+}
+Execute
+Clear
+Responses
+Curl
+
+curl -X 'POST' \
+  'https://stingray-app-x7lzo.ondigitalocean.app/api/v1/auth/register' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "phone_number": "+220 3947425",
+  "email": "esjallow03@gmail.com",
+  "full_name": "Ebrima S Jallow",
+  "password": "Student@123"
+}'
+Request URL
+https://stingray-app-x7lzo.ondigitalocean.app/api/v1/auth/register
+Server response
+Code	Details
+201	
+Response body
+Download
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzY2MzQ1MTIwfQ.zqTGRUx6hvMwkRj2rLc9u670_RSVXXrgB1s2RZY6Z_Y",
+  "token_type": "bearer",
+  "user": {
+    "phone_number": "+220 3947425",
+    "email": "esjallow03@gmail.com",
+    "full_name": "Ebrima S Jallow",
+    "id": 1,
+    "is_active": true,
+    "is_verified": false,
+    "created_at": "2025-12-14T19:25:19.780086Z"
+  }
+}
+Response headers
+ access-control-allow-credentials: true 
+ access-control-allow-origin: https://stingray-app-x7lzo.ondigitalocean.app 
+ alt-svc: h3=":443"; ma=86400 
+ cache-control: private 
+ cf-cache-status: DYNAMIC 
+ cf-ray: 9ae016251933020e-CDG 
+ content-length: 347 
+ content-type: application/json 
+ date: Sun,14 Dec 2025 19:25:20 GMT 
+ server: cloudflare 
+ vary: Origin 
+ x-do-app-origin: d0e38bc9-c8d0-484d-ba1a-ad19d1ebeac3 
+ x-do-orig-status: 201 
+Responses
+Code	Description	Links
+201	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "access_token": "string",
+  "token_type": "bearer",
+  "user": {
+    "phone_number": "string",
+    "email": "user@example.com",
+    "full_name": "string",
+    "id": 0,
+    "is_active": true,
+    "is_verified": true,
+    "created_at": "2025-12-14T21:15:42.708Z"
+  }
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/auth/login
+Login
+
+Login with phone or email.
+
+OAuth2 compatible (username field accepts phone or email). Returns 7-day token for offline usage.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/x-www-form-urlencoded
+grant_type
+username *
+string
+password *
+string
+scope
+string
+client_id
+client_secret
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "access_token": "string",
+  "token_type": "bearer",
+  "user": {
+    "phone_number": "string",
+    "email": "user@example.com",
+    "full_name": "string",
+    "id": 0,
+    "is_active": true,
+    "is_verified": true,
+    "created_at": "2025-12-14T21:15:42.714Z"
+  }
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/auth/me
+Get Current User Info
+
+
+Get current user profile.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "phone_number": "string",
+  "email": "user@example.com",
+  "full_name": "string",
+  "id": 0,
+  "is_active": true,
+  "is_verified": true,
+  "created_at": "2025-12-14T21:15:42.718Z"
+}
+No links
+
+POST
+/api/v1/auth/verify-sms
+Verify Sms Code
+
+SMS verification (Phase 3). TODO: Integrate with Twilio or Africa's Talking
+
+Parameters
+Try it out
+Name	Description
+phone *
+string
+(query)
+phone
+code *
+string
+(query)
+code
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/auth/forgot-password
+Forgot Password
+
+Generate OTP for password reset.
+
+Flow:
+
+User provides phone/email
+System generates 4-digit OTP
+OTP sent via SMS/Email (handled by notification service)
+Returns success (don't reveal if user exists for security)
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "identifier": "string"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/auth/reset-password
+Reset Password
+
+Reset password using OTP.
+
+Flow:
+
+User provides identifier + OTP + new password
+Verify OTP is valid
+Update password
+Invalidate OTP
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "identifier": "string",
+  "otp_code": "string",
+  "new_password": "string"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/auth/verify-otp
+Verify Otp
+
+Verify OTP without resetting password (for phone verification).
+
+Parameters
+Try it out
+Name	Description
+identifier *
+string
+(query)
+identifier
+otp_code *
+string
+(query)
+otp_code
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/auth/profile
+Get Profile
+
+
+Get current user's profile.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 0,
+  "phone_number": "string",
+  "email": "string",
+  "full_name": "string",
+  "education_level": "string",
+  "target_exam_date": "2025-12-14T21:15:42.742Z",
+  "preferred_subjects": [
+    "string"
+  ],
+  "study_streak": 0,
+  "is_verified": true,
+  "created_at": "2025-12-14T21:15:42.742Z"
+}
+No links
+
+PATCH
+/api/v1/auth/profile
+Update Profile
+
+
+Update user profile and preferences.
+
+Use cases:
+
+Student progresses from JSS1 to JSS2 → update education_level
+Student sets exam date → app can send reminders
+Student chooses favorite subjects → filter sync to only those subjects
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "full_name": "string",
+  "education_level": "string",
+  "target_exam_date": "string",
+  "preferred_subjects": [
+    "string"
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 0,
+  "phone_number": "string",
+  "email": "string",
+  "full_name": "string",
+  "education_level": "string",
+  "target_exam_date": "2025-12-14T21:15:42.747Z",
+  "preferred_subjects": [
+    "string"
+  ],
+  "study_streak": 0,
+  "is_verified": true,
+  "created_at": "2025-12-14T21:15:42.747Z"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+Questions
+
+
+GET
+/api/v1/questions/
+Get Questions
+
+
+Get questions with filtering.
+
+Optimized for offline sync:
+
+Max 200 questions per request (mobile storage constraints)
+Filters by subject/topic/difficulty
+Pagination support
+Parameters
+Try it out
+Name	Description
+subject
+(query)
+subject
+topic
+(query)
+topic
+difficulty
+(query)
+difficulty
+limit
+integer
+(query)
+maximum: 200
+Default value : 50
+
+50
+skip
+integer
+(query)
+Default value : 0
+
+0
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "subject": "Mathematics",
+    "topic": "string",
+    "content": "string",
+    "options_json": "string",
+    "correct_index": 0,
+    "explanation": "string",
+    "exam_year": "string",
+    "difficulty": "medium",
+    "id": 0
+  }
+]
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/questions/{question_id}
+Get Question
+
+
+Get single question by ID.
+
+Parameters
+Try it out
+Name	Description
+question_id *
+integer
+(path)
+question_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "subject": "Mathematics",
+  "topic": "string",
+  "content": "string",
+  "options_json": "string",
+  "correct_index": 0,
+  "explanation": "string",
+  "exam_year": "string",
+  "difficulty": "medium",
+  "id": 0
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/questions/subjects/list
+Get Subjects
+
+
+Get list of all subjects with question counts. Useful for mobile app to show available content.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+GET
+/api/v1/questions/topics/{subject}
+Get Topics
+
+
+Get all topics for a subject. Helps mobile app show topic selection menu.
+
+Parameters
+Try it out
+Name	Description
+subject *
+string
+(path)
+Available values : Mathematics, English Language, Physics, Chemistry, Biology
+
+
+Mathematics
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/questions/random/{subject}
+Get Random Questions
+
+
+Get random questions for quick practice. Used by SMS bot and mobile quick quiz.
+
+Parameters
+Try it out
+Name	Description
+subject *
+string
+(path)
+Available values : Mathematics, English Language, Physics, Chemistry, Biology
+
+
+Mathematics
+count
+integer
+(query)
+maximum: 50
+Default value : 10
+
+10
+difficulty
+(query)
+difficulty
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/questions/{question_id}/report
+Report Question
+
+
+Report a question for quality issues.
+
+Crowdsourced QA:
+
+Students report typos, wrong answers, unclear questions
+Admin dashboard shows most-reported questions
+Helps maintain quality at scale (4,000+ questions)
+Example: POST /api/v1/questions/42/report { "reason": "Wrong Answer", "comment": "Option B is correct, not A. See Physics textbook page 145" }
+
+Parameters
+Try it out
+Name	Description
+question_id *
+integer
+(path)
+question_id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "reason": "Wrong Answer",
+  "comment": "string"
+}
+Responses
+Code	Description	Links
+201	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 0,
+  "question_id": 0,
+  "reason": "string",
+  "status": "string",
+  "message": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/questions/{question_id}/reports
+Get Question Reports
+
+
+Get all reports for a question.
+
+Note: In production, restrict this to admin users only. For now, any authenticated user can see reports.
+
+Parameters
+Try it out
+Name	Description
+question_id *
+integer
+(path)
+question_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+Flashcards
+
+
+GET
+/api/v1/flashcards/decks
+Get Flashcard Decks
+
+
+Download flashcard decks for offline study.
+
+Lightweight JSON packs of facts (e.g., "Physics Definitions"). Filtered by user's preferred subjects if set.
+
+Query params:
+
+subject: Filter by subject (Mathematics, Physics, etc.)
+difficulty: Filter by difficulty (easy, medium, hard)
+Parameters
+Try it out
+Name	Description
+subject
+(query)
+subject
+difficulty
+(query)
+difficulty
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "name": "string",
+    "description": "string",
+    "subject": "string",
+    "difficulty": "string",
+    "card_count": 0,
+    "cards": [
+      {
+        "id": 0,
+        "front": "string",
+        "back": "string",
+        "image_url": "string"
+      }
+    ]
+  }
+]
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/flashcards/due
+Get Due Flashcards
+
+
+Get flashcards due for review today.
+
+Uses SuperMemo 2 spaced repetition algorithm. Returns cards where next_review_date <= today.
+
+Parameters
+Try it out
+Name	Description
+limit
+integer
+(query)
+maximum: 100
+Default value : 20
+
+20
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "front": "string",
+    "back": "string",
+    "image_url": "string"
+  }
+]
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/flashcards/sync
+Sync Flashcard Progress
+
+
+Sync flashcard review data from offline device.
+
+SuperMemo 2 Algorithm:
+
+quality: 0-5 (0=complete blackout, 5=perfect)
+If quality >= 3: increase interval
+If quality < 3: reset interval to 1 day
+Example: POST /api/v1/flashcards/sync [ { "card_id": 42, "quality": 4, "reviewed_at": "2025-12-14T10:30:00Z" } ]
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+[
+  {
+    "card_id": 0,
+    "quality": 0,
+    "reviewed_at": "2025-12-14T21:15:42.796Z"
+  }
+]
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/flashcards/progress
+Get Flashcard Progress
+
+
+Get user's flashcard review progress.
+
+Optionally filter by deck_id.
+
+Parameters
+Try it out
+Name	Description
+deck_id
+(query)
+deck_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "card_id": 0,
+    "ease_factor": 0,
+    "interval": 0,
+    "repetitions": 0,
+    "next_review_date": "2025-12-14T21:15:42.800Z"
+  }
+]
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+AI Tutor
+
+
+POST
+/api/v1/ai/explain
+Explain Answer
+
+
+Generate intelligent explanation for why a student's answer was wrong.
+
+This is the "Big Brain" - uses server-side Gemini to provide high-quality, personalized explanations when the student has internet connectivity.
+
+Use Case: Student just failed a question and wants to understand why.
+
+Example:
+
+{
+    "question_id": 402,
+    "student_answer": 2,
+    "context": "I thought isotopes had different atomic numbers"
+}
+Response:
+
+{
+    "explanation": "You chose option C, which states isotopes have different atomic numbers. This is incorrect. Isotopes are atoms of the same element (same atomic number) but with different numbers of neutrons, giving them different mass numbers...",
+    "correct_answer": 1,
+    "key_concepts": ["Atomic Structure", "Isotopes", "Mass Number"],
+    "difficulty": "MEDIUM"
+}
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "question_id": 0,
+  "student_answer": 0,
+  "context": "string"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "explanation": "string",
+  "correct_answer": 0,
+  "key_concepts": [
+    "string"
+  ],
+  "difficulty": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/ai/chat
+Chat Tutor
+
+
+Conversational AI tutor for deep-dive learning.
+
+This is the "Online Tutor" - when students have connectivity, they can have extended conversations about topics they don't understand.
+
+Use Case: Student says "I don't understand Isotopes" and gets a conversation.
+
+Example:
+
+{
+    "message": "I don't understand isotopes",
+    "history": [],
+    "subject": "CHEMISTRY",
+    "topic": "Atomic Structure"
+}
+Response:
+
+{
+    "response": "Great question! Isotopes are atoms of the same element that have the same number of protons but different numbers of neutrons. Think of it like siblings - they're from the same family (element) but have different weights. For example, Carbon-12 and Carbon-14 are both Carbon atoms...",
+    "suggestions": [
+        "Can you give me more examples of isotopes?",
+        "How do isotopes affect atomic mass?",
+        "What are radioactive isotopes?"
+    ],
+    "related_topics": ["Atomic Mass", "Radioactivity", "Nuclear Chemistry"]
+}
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "message": "string",
+  "history": [
+    {
+      "role": "string",
+      "content": "string"
+    }
+  ],
+  "subject": "string",
+  "topic": "string"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "response": "string",
+  "suggestions": [
+    "string"
+  ],
+  "related_topics": [
+    "string"
+  ]
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/ai/status
+Ai Status
+
+
+Check AI service availability and user's remaining quota.
+
+Returns:
+
+available: Whether AI services are currently operational
+quota_remaining: How many AI requests the user has left (for free tier)
+features: Which AI features are available to this user
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+Assets
+
+
+GET
+/api/v1/assets/image/{filename}
+Serve Image
+
+
+Serve images optimized for user's network conditions.
+
+Data-Saver Strategy:
+
+2G/3G: Serves 5KB grayscale WebP (90% data savings)
+4G: Serves 20KB compressed JPEG (60% data savings)
+WiFi: Serves full 50KB color image
+Use Case: Question diagrams, flashcard images, profile pictures
+
+Examples:
+
+GET /api/v1/assets/image/chemistry-diagram-42.png?quality=low
+GET /api/v1/assets/image/math-graph-105.jpg?network=2g
+GET /api/v1/assets/image/physics-circuit-23.png?quality=auto
+Response: Image file with appropriate compression
+
+Parameters
+Try it out
+Name	Description
+filename *
+string
+(path)
+filename
+quality
+string
+(query)
+Image quality level
+
+Available values : low, medium, high, auto
+
+Default value : auto
+
+
+auto
+network
+(query)
+Current network type
+
+network
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/assets/image/{filename}/info
+Image Info
+
+
+Get information about an image without downloading it.
+
+Returns:
+
+File size for each quality level
+Dimensions
+Available formats
+Use Case: Let students choose quality before downloading
+
+Parameters
+Try it out
+Name	Description
+filename *
+string
+(path)
+filename
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/assets/data-usage
+Data Usage Stats
+
+
+Track estimated data usage for this user.
+
+Returns:
+
+Total data saved through optimization
+Breakdown by quality level
+Recommendations
+Use Case: Help students understand data consumption
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+Billing
+
+
+GET
+/api/v1/billing/plans
+Get Plans
+
+List all available subscription plans.
+
+Returns: Array of plans with features and pricing
+
+Use Case: Display pricing page to users
+
+Example Response:
+
+[
+    {
+        "id": "free",
+        "name": "Basic",
+        "price": 0,
+        "features": ["Unlimited offline questions", "5 AI explanations/day"],
+        "is_popular": false
+    },
+    {
+        "id": "premium",
+        "name": "Exam Master",
+        "price": 500,
+        "currency": "NGN",
+        "features": ["Unlimited AI chat", "High-quality images"],
+        "is_popular": true
+    }
+]
+Parameters
+Try it out
+Name	Description
+currency
+(query)
+currency
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": "string",
+    "name": "string",
+    "description": "string",
+    "price": 0,
+    "currency": "NGN",
+    "duration_days": 0,
+    "features": [
+      "string"
+    ],
+    "is_popular": false
+  }
+]
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/billing/plans/{plan_id}
+Get Plan
+
+Get details for a specific plan.
+
+Parameters
+Try it out
+Name	Description
+plan_id *
+string
+(path)
+plan_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "price": 0,
+  "currency": "NGN",
+  "duration_days": 0,
+  "features": [
+    "string"
+  ],
+  "is_popular": false
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/billing/initialize
+Initialize Payment
+
+
+Initialize a payment transaction with Paystack/Flutterwave.
+
+Flow:
+
+User selects a plan
+This endpoint creates a transaction reference
+Returns authorization URL for payment
+User completes payment on Paystack
+Webhook updates subscription status
+Example Request:
+
+{
+    "plan_id": "premium",
+    "email": "student@example.com",
+    "currency": "NGN"
+}
+Example Response:
+
+{
+    "authorization_url": "https://checkout.paystack.com/abc123",
+    "reference": "base10_1234567890",
+    "access_code": "abc123xyz"
+}
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "plan_id": "string",
+  "email": "user@example.com",
+  "currency": "NGN"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "authorization_url": "string",
+  "reference": "string",
+  "access_code": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/billing/webhook
+Payment Webhook
+
+Webhook endpoint for Paystack/Flutterwave payment notifications.
+
+Security: Validates webhook signature to ensure requests come from payment provider.
+
+Events Handled:
+
+charge.success: Payment completed successfully
+subscription.create: Subscription created
+subscription.disable: Subscription cancelled
+Flow:
+
+Paystack sends webhook when payment succeeds
+We verify the signature
+Update user's subscription status in database
+Send confirmation email
+Configure in Paystack Dashboard:
+
+Webhook URL: https://api.base10.edu/api/v1/billing/webhook
+Events: charge.success, subscription.*
+Parameters
+Try it out
+Name	Description
+x-paystack-signature
+(header)
+x-paystack-signature
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/billing/subscription
+Get Subscription
+
+
+Get current user's subscription status.
+
+Returns:
+
+Current plan
+Expiration date
+Features available
+Usage quotas
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+POST
+/api/v1/billing/cancel
+Cancel Subscription
+
+
+Cancel user's subscription.
+
+Note: Access continues until end of billing period.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+GET
+/api/v1/billing/transactions
+Get Transactions
+
+
+Get user's payment transaction history.
+
+Returns: List of past payments with status
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+Offline Sync
+
+
+POST
+/api/v1/sync/push
+Sync Push Attempts
+
+
+Push offline attempts to server.
+
+This is called when the student's phone reconnects to internet. Receives all quiz attempts made offline and saves them.
+
+Idempotency: Uses device_id + question_id + timestamp to prevent duplicates.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "attempts": [
+    {
+      "question_id": 0,
+      "selected_option": 0,
+      "is_correct": true,
+      "attempted_at": "2025-12-14T21:15:42.863Z",
+      "device_id": "string",
+      "time_taken_ms": 0,
+      "confidence_level": 0,
+      "network_type": "wifi",
+      "app_version": "string"
+    }
+  ],
+  "device_id": "string"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "status": "string",
+  "synced_count": 0,
+  "failed_count": 0,
+  "message": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/sync/pull
+Sync Pull Questions
+
+
+Pull new questions with DELTA SYNC optimization.
+
+Delta Sync Reduces Data Usage:
+
+WITHOUT delta: Downloads all 200 questions every time (~2MB)
+WITH delta: Only downloads changed questions since last sync (~50KB avg)
+Algorithm with Spaced Repetition:
+
+If last_sync_timestamp provided, filter by updated_at > timestamp
+Get questions due for SRS review (next_review_date <= now)
+Prioritize: 40% due reviews, 30% weak topics, 30% new material
+Return only changed questions (massive data savings)
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "last_sync_timestamp": "2025-12-14T21:15:42.870Z",
+  "subjects": [
+    "Mathematics"
+  ],
+  "limit": 50
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "questions": [
+    {
+      "subject": "Mathematics",
+      "topic": "string",
+      "content": "string",
+      "options_json": "string",
+      "correct_index": 0,
+      "explanation": "string",
+      "exam_year": "string",
+      "difficulty": "medium",
+      "id": 0
+    }
+  ],
+  "weak_topics": [
+    "string"
+  ],
+  "total_attempts": 0,
+  "accuracy": 0,
+  "synced_at": "2025-12-14T21:15:42.871Z"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/sync/stats
+Get User Stats
+
+
+Get comprehensive user statistics. Used by mobile app dashboard.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+GET
+/api/v1/sync/reviews/due
+Get Due Reviews
+
+
+Get questions due for spaced repetition review.
+
+Mobile app can show: "📚 5 reviews due today!"
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+Leaderboard
+
+
+GET
+/api/v1/leaderboard/weekly
+Get Weekly Leaderboard
+
+
+Get weekly leaderboard (top 100 users).
+
+Updated every Sunday at 23:00 GMT by scheduler. Cached in Redis for fast response.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "period": "string",
+  "updated_at": "2025-12-14T21:15:42.879Z",
+  "leaderboard": [
+    {
+      "rank": 0,
+      "user_id": 0,
+      "name": "string",
+      "attempts": 0,
+      "accuracy": 0
+    }
+  ],
+  "user_rank": 0
+}
+No links
+
+GET
+/api/v1/leaderboard/monthly
+Get Monthly Leaderboard
+
+
+Get monthly leaderboard (top 100 users).
+
+Updated on 1st of each month by scheduler.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "period": "string",
+  "updated_at": "2025-12-14T21:15:42.882Z",
+  "leaderboard": [
+    {
+      "rank": 0,
+      "user_id": 0,
+      "name": "string",
+      "attempts": 0,
+      "accuracy": 0
+    }
+  ],
+  "user_rank": 0
+}
+No links
+
+GET
+/api/v1/leaderboard/my-rank
+Get My Rank
+
+
+Get current user's rank in weekly and monthly leaderboards.
+
+Quick lookup without fetching full leaderboard.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+Teacher
+
+
+GET
+/api/v1/teacher/classrooms
+List Classrooms
+
+
+List all classrooms for the current teacher.
+
+Returns classrooms with student counts.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "name": "string",
+    "description": "string",
+    "join_code": "string",
+    "is_active": 0,
+    "student_count": 0,
+    "created_at": "2025-12-14T21:15:42.887Z"
+  }
+]
+No links
+
+POST
+/api/v1/teacher/classrooms
+Create Classroom
+
+
+Create a new classroom.
+
+Teachers use this to organize students into groups. Returns a unique join code for students.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "description": "string"
+}
+Responses
+Code	Description	Links
+201	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 0,
+  "name": "string",
+  "description": "string",
+  "join_code": "string",
+  "is_active": 0,
+  "student_count": 0,
+  "created_at": "2025-12-14T21:15:42.891Z"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/teacher/classrooms/join
+Join Classroom
+
+
+Student joins a classroom using join code.
+
+Students enter the code from their teacher to auto-enroll.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "join_code": "strings"
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+POST
+/api/v1/teacher/assignments
+Create Assignment
+
+
+Create homework assignment for a classroom.
+
+Assigns specific questions (by subject/topic/difficulty) to all students.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "classroom_id": 0,
+  "title": "string",
+  "description": "string",
+  "subject_filter": "string",
+  "topic_filter": "string",
+  "difficulty_filter": "string",
+  "question_count": 10,
+  "due_date": "2025-12-14T21:15:42.901Z"
+}
+Responses
+Code	Description	Links
+201	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 0,
+  "classroom_id": 0,
+  "title": "string",
+  "description": "string",
+  "subject_filter": "string",
+  "topic_filter": "string",
+  "question_count": 0,
+  "due_date": "2025-12-14T21:15:42.903Z",
+  "created_at": "2025-12-14T21:15:42.903Z"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+
+GET
+/api/v1/teacher/analytics/{classroom_id}
+Get Classroom Analytics
+
+
+Get comprehensive analytics for a classroom.
+
+This is THE CORE FEATURE for teachers:
+
+See which students are struggling
+Identify misconceptions (high confidence + wrong answers)
+Detect guessing patterns
+Find weak topics needing review
+Powered by psychometric data from attempts.
+
+Parameters
+Try it out
+Name	Description
+classroom_id *
+integer
+(path)
+classroom_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "classroom_id": 0,
+  "classroom_name": "string",
+  "total_students": 0,
+  "active_students": 0,
+  "total_attempts": 0,
+  "average_accuracy": 0,
+  "avg_time_per_question_ms": 0,
+  "guessing_rate": 0,
+  "struggle_rate": 0,
+  "students": [
+    {
+      "user_id": 0,
+      "full_name": "string",
+      "total_attempts": 0,
+      "correct_attempts": 0,
+      "accuracy": 0,
+      "avg_time_ms": 0,
+      "guessing_rate": 0,
+      "struggle_rate": 0,
+      "misconception_count": 0
+    }
+  ],
+  "topics": [
+    {
+      "topic": "string",
+      "total_attempts": 0,
+      "accuracy": 0,
+      "avg_confidence": 0,
+      "struggling_students": 0
+    }
+  ]
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+System
+
+
+GET
+/api/v1/system/config
+Get System Config
+
+
+GET
+/api/v1/system/health
+Health Check
+
+Simple health check endpoint.
+
+Used by:
+
+Load balancers
+Monitoring systems
+Deploy verification
+Parameters
+Cancel
+No parameters
+
+Execute
+Clear
+Responses
+Curl
+
+curl -X 'GET' \
+  'https://stingray-app-x7lzo.ondigitalocean.app/api/v1/system/health' \
+  -H 'accept: application/json'
+Request URL
+https://stingray-app-x7lzo.ondigitalocean.app/api/v1/system/health
+Server response
+Code	Details
+200	
+Response body
+Download
+{
+  "status": "healthy",
+  "service": "Base10 API",
+  "version": "1.0.0"
+}
+Response headers
+ alt-svc: h3=":443"; ma=86400 
+ cache-control: private 
+ cf-cache-status: MISS 
+ cf-ray: 9ae0051498866f8e-CDG 
+ content-encoding: br 
+ content-type: application/json 
+ date: Sun,14 Dec 2025 19:13:40 GMT 
+ server: cloudflare 
+ vary: Accept-Encoding 
+ x-do-app-origin: d0e38bc9-c8d0-484d-ba1a-ad19d1ebeac3 
+ x-do-orig-status: 200 
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+GET
+/api/v1/system/
+Root
+
+API root endpoint.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+default
+
+
+GET
+/
+Root
+
+Health check endpoint.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+GET
+/health
+Health Check
+
+Kubernetes/Docker health check.
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+
+Schemas
+AssignmentCreateCollapse allobject
+Schema for creating an assignment.
+
+classroom_idinteger
+titlestring[3, 200] characters
+descriptionCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+subject_filterCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+topic_filterCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+difficulty_filterCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+question_countCollapse allinteger[1, 50]
+Default10
+due_dateCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+AssignmentResponseCollapse allobject
+Schema for assignment responses.
+
+idinteger
+classroom_idinteger
+titlestring
+descriptionCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+subject_filterCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+topic_filterCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+question_countinteger
+due_dateCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+created_atstringdate-time
+AttemptCreateCollapse allobject
+Schema for creating an attempt (from mobile offline data).
+
+question_idinteger
+selected_optioninteger[0, 3]
+is_correctboolean
+attempted_atstringdate-time
+device_idCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+time_taken_msCollapse all(integer | null)
+Time taken in milliseconds
+
+Any ofCollapse all(integer | null)
+#0integer≥ 0
+#1null
+confidence_levelCollapse all(integer | null)
+1=Guessing, 5=Certain
+
+Any ofCollapse all(integer | null)
+#0integer[1, 5]
+#1null
+network_typeCollapse all(string | null)
+Network type during attempt
+
+Any ofCollapse all(string | null)
+#0 NetworkTypeEnumExpand allstring
+#1null
+app_versionCollapse all(string | null)
+App version, e.g., 1.2.3
+
+Any ofCollapse all(string | null)
+#0string<= 20 characters
+#1null
+Body_login_api_v1_auth_login_postCollapse allobject
+grant_typeCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringmatches password
+#1null
+usernamestring
+passwordstring
+scopeCollapse allstring
+Default""
+client_idCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+client_secretCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+CardSchemaCollapse allobject
+Individual flashcard.
+
+idinteger
+frontstring
+backstring
+image_urlCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+ChatMessageCollapse allobject
+A single message in the conversation.
+
+roleCollapse allstring
+Either 'user' or 'assistant'
+
+contentCollapse allstring
+The message content
+
+ChatRequestCollapse allobject
+Request for conversational AI tutoring.
+
+messageCollapse allstring[1, 1000] characters
+Student's question or message
+
+historyCollapse allarray<object>
+Previous conversation history
+
+ItemsCollapse allobject
+A single message in the conversation.
+
+roleCollapse allstring
+Either 'user' or 'assistant'
+
+contentCollapse allstring
+The message content
+
+subjectCollapse all(string | null)
+Subject context (MATHEMATICS, PHYSICS, etc.)
+
+Any ofCollapse all(string | null)
+#0string
+#1null
+topicCollapse all(string | null)
+Specific topic for context
+
+Any ofCollapse all(string | null)
+#0string
+#1null
+ChatResponseCollapse allobject
+AI tutor's response.
+
+responseCollapse allstring
+AI tutor's helpful response
+
+suggestionsCollapse allarray<string>
+Follow-up question suggestions
+
+Itemsstring
+related_topicsCollapse allarray<string>
+Related topics to explore
+
+Itemsstring
+ClassroomAnalyticsCollapse allobject
+Comprehensive classroom analytics.
+
+classroom_idinteger
+classroom_namestring
+total_studentsinteger
+active_studentsinteger
+total_attemptsinteger
+average_accuracynumber
+avg_time_per_question_msCollapse all(number | null)
+Any ofCollapse all(number | null)
+#0number
+#1null
+guessing_ratenumber
+struggle_ratenumber
+studentsCollapse allarray<object>
+ItemsCollapse allobject
+Individual student performance in a classroom.
+
+user_idinteger
+full_namestring
+total_attemptsinteger
+correct_attemptsinteger
+accuracynumber
+avg_time_msCollapse all(number | null)
+Any ofCollapse all(number | null)
+#0number
+#1null
+guessing_ratenumber
+struggle_ratenumber
+misconception_countinteger
+topicsCollapse allarray<object>
+ItemsCollapse allobject
+Performance by topic.
+
+topicstring
+total_attemptsinteger
+accuracynumber
+avg_confidenceCollapse all(number | null)
+Any ofCollapse all(number | null)
+#0number
+#1null
+struggling_studentsinteger
+ClassroomCreateCollapse allobject
+Schema for creating a classroom.
+
+nameCollapse allstring[3, 100] characters
+Classroom name
+
+descriptionCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string<= 500 characters
+#1null
+ClassroomJoinCollapse allobject
+Schema for students joining a classroom.
+
+join_codestring[7, 12] characters
+ClassroomResponseCollapse allobject
+Schema for classroom responses.
+
+idinteger
+namestring
+descriptionCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+join_codestring
+is_activeinteger
+student_countinteger
+created_atstringdate-time
+CurrencyCollapse allstring
+Supported currencies.
+
+Allowed values"NGN""GHS""GMD""SLL""USD"
+DeckSchemaCollapse allobject
+Flashcard deck with cards.
+
+idinteger
+namestring
+descriptionCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+subjectstring
+difficultystring
+card_countinteger
+cardsCollapse allarray<object>
+ItemsCollapse allobject
+Individual flashcard.
+
+idinteger
+frontstring
+backstring
+image_urlCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+DifficultyEnumCollapse allstring
+Question difficulty.
+
+Allowed values"easy""medium""hard"
+ExplainRequestCollapse allobject
+Request to explain why a student's answer was wrong.
+
+question_idCollapse allinteger
+The question ID the student attempted
+
+student_answerCollapse allinteger[0, 3]
+The option index (0-3) the student selected
+
+contextCollapse all(string | null)
+Additional context about student's confusion
+
+Any ofCollapse all(string | null)
+#0string
+#1null
+ExplainResponseCollapse allobject
+AI-generated explanation tailored to student's mistake.
+
+explanationCollapse allstring
+Detailed explanation of why the answer was wrong and how to approach it correctly
+
+correct_answerCollapse allinteger
+The correct option index
+
+key_conceptsCollapse allarray<string>
+Key concepts the student should review
+
+Itemsstring
+difficultyCollapse allstring
+Question difficulty level
+
+FlashcardSyncRequestCollapse allobject
+Sync flashcard review data from offline device.
+
+card_idinteger
+qualityinteger
+reviewed_atstringdate-time
+ForgotPasswordRequestCollapse allobject
+identifierstring
+HTTPValidationErrorCollapse allobject
+detailCollapse allarray<object>
+ItemsCollapse allobject
+locCollapse allarray<(string | integer)>
+ItemsCollapse all(string | integer)
+Any ofCollapse all(string | integer)
+#0string
+#1integer
+msgstring
+typestring
+ImageQualityCollapse allstring
+Image quality levels based on network conditions.
+
+Allowed values"low""medium""high""auto"
+InitializePaymentRequestCollapse allobject
+Request to start a payment transaction.
+
+plan_idCollapse allstring
+The plan to subscribe to
+
+emailCollapse allstringemail
+User's email for payment receipt
+
+currencyCollapse allstring
+Payment currency
+
+Allowed values"NGN""GHS""GMD""SLL""USD"
+Default"NGN"
+InitializePaymentResponseCollapse allobject
+Response with payment initialization details.
+
+authorization_urlCollapse allstring
+URL to redirect user for payment
+
+referenceCollapse allstring
+Unique transaction reference
+
+access_codeCollapse all(string | null)
+Paystack access code
+
+Any ofCollapse all(string | null)
+#0string
+#1null
+LeaderboardEntryCollapse allobject
+Leaderboard entry schema.
+
+rankinteger
+user_idinteger
+namestring
+attemptsinteger
+accuracynumber
+LeaderboardResponseCollapse allobject
+Leaderboard API response.
+
+periodstring
+updated_atCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+leaderboardCollapse allarray<object>
+ItemsCollapse allobject
+Leaderboard entry schema.
+
+rankinteger
+user_idinteger
+namestring
+attemptsinteger
+accuracynumber
+user_rankCollapse all(integer | null)
+Any ofCollapse all(integer | null)
+#0integer
+#1null
+NetworkTypeCollapse allstring
+Network types for automatic quality detection.
+
+Allowed values"wifi""4g""3g""2g""offline"
+NetworkTypeEnumCollapse allstring
+Network type when attempt was made.
+
+Allowed values"wifi""4g""3g""2g""offline"
+PlanCollapse allobject
+Subscription plan details.
+
+idCollapse allstring
+Plan identifier
+
+nameCollapse allstring
+Display name
+
+descriptionCollapse allstring
+Plan features description
+
+priceCollapse allinteger
+Price in base currency units
+
+currencyCollapse allstring
+Currency code
+
+Allowed values"NGN""GHS""GMD""SLL""USD"
+Default"NGN"
+duration_daysCollapse allinteger
+Plan duration in days
+
+featuresCollapse allarray<string>
+List of features included
+
+Itemsstring
+is_popularCollapse allboolean
+Mark as popular/recommended
+
+Defaultfalse
+ProfileResponseCollapse allobject
+User profile response.
+
+idinteger
+phone_numberCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+emailCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+full_nameCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+education_levelCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+target_exam_dateCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+preferred_subjectsCollapse all(array<string> | null)
+Any ofCollapse all(array<string> | null)
+#0Expand allarray<string>
+#1null
+study_streakinteger
+is_verifiedboolean
+created_atstringdate-time
+ProfileUpdateRequestCollapse allobject
+User profile update schema.
+
+full_nameCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+education_levelCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+target_exam_dateCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+preferred_subjectsCollapse all(array<string> | null)
+Any ofCollapse all(array<string> | null)
+#0Expand allarray<string>
+#1null
+QuestionResponseCollapse allobject
+Schema for question responses.
+
+subjectCollapse allstring
+WAEC subjects.
+
+Allowed values"Mathematics""English Language""Physics""Chemistry""Biology"
+topicstring
+contentstring
+options_jsonstring
+correct_indexinteger[0, 3]
+explanationCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+exam_yearCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+difficultyCollapse allstring
+Question difficulty.
+
+Allowed values"easy""medium""hard"
+Default"medium"
+idinteger
+ReportQuestionRequestCollapse allobject
+Schema for reporting a question.
+
+reasonCollapse allstring
+Predefined report reasons for consistency.
+
+Allowed values"Wrong Answer""Typo""Unclear Question""Missing Diagram""Outdated Content""Other"
+commentCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+ReportReasonCollapse allstring
+Predefined report reasons for consistency.
+
+Allowed values"Wrong Answer""Typo""Unclear Question""Missing Diagram""Outdated Content""Other"
+ReportResponseCollapse allobject
+Response after reporting a question.
+
+idinteger
+question_idinteger
+reasonstring
+statusstring
+messagestring
+ResetPasswordRequestCollapse allobject
+identifierstring
+otp_codestring
+new_passwordstring
+ReviewSchemaCollapse allobject
+User's review progress on a card.
+
+card_idinteger
+ease_factornumber
+intervalinteger
+repetitionsinteger
+next_review_dateCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+StudentPerformanceCollapse allobject
+Individual student performance in a classroom.
+
+user_idinteger
+full_namestring
+total_attemptsinteger
+correct_attemptsinteger
+accuracynumber
+avg_time_msCollapse all(number | null)
+Any ofCollapse all(number | null)
+#0number
+#1null
+guessing_ratenumber
+struggle_ratenumber
+misconception_countinteger
+SubjectEnumCollapse allstring
+WAEC subjects.
+
+Allowed values"Mathematics""English Language""Physics""Chemistry""Biology"
+SyncPullRequestCollapse allobject
+Request for pulling new questions with delta sync.
+
+Delta Sync Logic:
+
+If last_sync_timestamp is None: Full sync (return all questions up to limit)
+If last_sync_timestamp provided: Return only questions where updated_at > last_sync_timestamp
+last_sync_timestampCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringdate-time
+#1null
+subjectsCollapse all(array<string> | null)
+Any ofCollapse all(array<string> | null)
+#0Expand allarray<string>
+#1null
+limitCollapse allinteger≤ 200
+Default50
+SyncPullResponseCollapse allobject
+Response with questions and user stats.
+
+questionsCollapse allarray<object>
+ItemsCollapse allobject
+Schema for question responses.
+
+subjectCollapse allstring
+WAEC subjects.
+
+Allowed values"Mathematics""English Language""Physics""Chemistry""Biology"
+topicstring
+contentstring
+options_jsonstring
+correct_indexinteger[0, 3]
+explanationCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+exam_yearCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+difficultyCollapse allstring
+Question difficulty.
+
+Allowed values"easy""medium""hard"
+Default"medium"
+idinteger
+weak_topicsCollapse allarray<string>
+Itemsstring
+total_attemptsinteger
+accuracynumber
+synced_atstringdate-time
+SyncPushRequestCollapse allobject
+Schema for pushing offline attempts to server.
+
+attemptsCollapse allarray<object>
+ItemsCollapse allobject
+Schema for creating an attempt (from mobile offline data).
+
+question_idinteger
+selected_optioninteger[0, 3]
+is_correctboolean
+attempted_atstringdate-time
+device_idCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+time_taken_msCollapse all(integer | null)
+Time taken in milliseconds
+
+Any ofCollapse all(integer | null)
+#0integer≥ 0
+#1null
+confidence_levelCollapse all(integer | null)
+1=Guessing, 5=Certain
+
+Any ofCollapse all(integer | null)
+#0integer[1, 5]
+#1null
+network_typeCollapse all(string | null)
+Network type during attempt
+
+Any ofCollapse all(string | null)
+#0 NetworkTypeEnumExpand allstring
+#1null
+app_versionCollapse all(string | null)
+App version, e.g., 1.2.3
+
+Any ofCollapse all(string | null)
+#0string<= 20 characters
+#1null
+device_idstring
+SyncPushResponseCollapse allobject
+Response after syncing attempts.
+
+statusstring
+synced_countinteger
+failed_countCollapse allinteger
+Default0
+messagestring
+SystemConfigCollapse allobject
+System configuration response.
+
+min_app_versionstring
+latest_app_versionstring
+maintenance_modeboolean
+force_updateboolean
+motdstring
+api_versionstring
+featuresobject
+TokenCollapse allobject
+JWT token response.
+
+access_tokenstring
+token_typeCollapse allstring
+Default"bearer"
+userCollapse allobject
+Schema for user data in responses.
+
+phone_numberCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+emailCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringemail
+#1null
+full_nameCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+idinteger
+is_activeboolean
+is_verifiedboolean
+created_atstringdate-time
+TopicPerformanceCollapse allobject
+Performance by topic.
+
+topicstring
+total_attemptsinteger
+accuracynumber
+avg_confidenceCollapse all(number | null)
+Any ofCollapse all(number | null)
+#0number
+#1null
+struggling_studentsinteger
+UserCreateCollapse allobject
+Schema for user registration.
+
+phone_numberCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+emailCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringemail
+#1null
+full_nameCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+passwordstring>= 6 characters
+UserResponseCollapse allobject
+Schema for user data in responses.
+
+phone_numberCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+emailCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0stringemail
+#1null
+full_nameCollapse all(string | null)
+Any ofCollapse all(string | null)
+#0string
+#1null
+idinteger
+is_activeboolean
+is_verifiedboolean
+created_atstringdate-time
+ValidationErrorCollapse allobject
+locCollapse allarray<(string | integer)>
+ItemsCollapse all(string | integer)
+Any ofCollapse all(string | integer)
+#0string
+#1integer
+msgstring
+typestring

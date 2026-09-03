@@ -1,0 +1,7 @@
+<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#22C55E" rx="32"/>
+  <g>
+    <text x="80" y="120" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="#0F172A" text-anchor="middle">X</text>
+    <text x="120" y="135" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#0F172A">10</text>
+  </g>
+</svg>
