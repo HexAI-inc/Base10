@@ -75,6 +75,11 @@ class User(Base):
     has_app_installed = Column(Boolean, default=False)  # For smart notification routing
     study_streak = Column(Integer, default=0)  # Consecutive days with activity
     last_activity_date = Column(DateTime(timezone=True), nullable=True)  # For streak calculation
+
+    # Subscription (HPG billing)
+    subscription_plan = Column(String(50), nullable=True)  # "free", "premium", "school"
+    subscription_status = Column(String(20), nullable=True)  # "active", "cancelled", "expired"
+    subscription_expires_at = Column(DateTime(timezone=True), nullable=True)
     
     # Tracking
     created_at = Column(DateTime(timezone=True), server_default=func.now())

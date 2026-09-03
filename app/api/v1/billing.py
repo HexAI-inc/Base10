@@ -1,6 +1,6 @@
 """
 Billing and monetization endpoints.
-Handles subscriptions, payments (Paystack/Flutterwave), and premium features.
+Handles subscriptions and payments via HPG (HexAI Payment Gateway).
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
@@ -9,15 +9,28 @@ from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime, timedelta
 import hashlib
 import hmac
+import httpx
 from enum import Enum
 
 from app.db.session import get_db
 from app.models.user import User
+from app.models.transaction import Transaction
 from app.api.v1.auth import get_current_user
 from app.core.config import settings
 
 
 router = APIRouter()
+
+
+async def _hpg_initiate_collection(payload: dict) -> httpx.Response:
+    """Call HPG's POST /collections/initiate. Isolated for testability."""
+    async with httpx.AsyncClient() as http_client:
+        return await http_client.post(
+            f"{settings.HPG_BASE_URL}/collections/initiate",
+            json=payload,
+            headers={"Authorization": f"Bearer {settings.HPG_API_KEY}"},
+            timeout=15.0,
+        )
 
 
 class PlanType(str, Enum):
@@ -53,19 +66,18 @@ class InitializePaymentRequest(BaseModel):
     plan_id: str = Field(..., description="The plan to subscribe to")
     email: EmailStr = Field(..., description="User's email for payment receipt")
     currency: Currency = Field(default=Currency.NGN, description="Payment currency")
+    provider: str = Field(default="WAVE", description="Payment rail: WAVE, APS, or WAYCHIT_CARD")
+    success_url: str = Field(..., description="Where to redirect the user after a successful payment")
+    error_url: str = Field(..., description="Where to redirect the user after a failed payment")
 
 
 class InitializePaymentResponse(BaseModel):
-    """Response with payment initialization details."""
-    authorization_url: str = Field(..., description="URL to redirect user for payment")
-    reference: str = Field(..., description="Unique transaction reference")
-    access_code: Optional[str] = Field(None, description="Paystack access code")
-
-
-class WebhookPayload(BaseModel):
-    """Paystack/Flutterwave webhook payload."""
-    event: str
-    data: dict
+    """Response with HPG payment initialization details."""
+    transaction_id: str = Field(..., description="HPG transaction identifier")
+    status: str = Field(..., description="Initial transaction status (PENDING)")
+    redirect_url: str = Field(..., description="URL to redirect the user to complete payment")
+    provider: str = Field(..., description="Payment rail handling this transaction")
+    created_at: str = Field(..., description="ISO timestamp from HPG")
 
 
 # Define available plans
@@ -130,31 +142,10 @@ PLANS = [
 async def get_plans(currency: Optional[Currency] = None):
     """
     List all available subscription plans.
-    
+
     **Returns**: Array of plans with features and pricing
-    
+
     **Use Case**: Display pricing page to users
-    
-    **Example Response**:
-    ```json
-    [
-        {
-            "id": "free",
-            "name": "Basic",
-            "price": 0,
-            "features": ["Unlimited offline questions", "5 AI explanations/day"],
-            "is_popular": false
-        },
-        {
-            "id": "premium",
-            "name": "Exam Master",
-            "price": 500,
-            "currency": "NGN",
-            "features": ["Unlimited AI chat", "High-quality images"],
-            "is_popular": true
-        }
-    ]
-    ```
     """
     # In production, could convert prices based on requested currency
     # For now, return all plans
@@ -177,180 +168,163 @@ async def initialize_payment(
     db: Session = Depends(get_db)
 ):
     """
-    Initialize a payment transaction with Paystack/Flutterwave.
-    
+    Initialize a payment transaction with HPG.
+
     **Flow**:
     1. User selects a plan
-    2. This endpoint creates a transaction reference
-    3. Returns authorization URL for payment
-    4. User completes payment on Paystack
-    5. Webhook updates subscription status
-    
-    **Example Request**:
-    ```json
-    {
-        "plan_id": "premium",
-        "email": "student@example.com",
-        "currency": "NGN"
-    }
-    ```
-    
-    **Example Response**:
-    ```json
-    {
-        "authorization_url": "https://checkout.paystack.com/abc123",
-        "reference": "base10_1234567890",
-        "access_code": "abc123xyz"
-    }
-    ```
+    2. This endpoint creates a PENDING Transaction and calls HPG's
+       /collections/initiate
+    3. Returns the redirect_url for the user to complete payment
+    4. HPG sends a webhook (or we poll /collections/status) to confirm
     """
     # Validate plan exists
     plan = next((p for p in PLANS if p.id == request.plan_id), None)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
-    
+
     # Free plan doesn't need payment
     if plan.price == 0:
         raise HTTPException(status_code=400, detail="Free plan doesn't require payment")
-    
-    # Generate unique transaction reference
+
+    if not settings.HPG_API_KEY:
+        raise HTTPException(status_code=503, detail="Billing is not configured")
+
+    # Generate unique client reference
     timestamp = int(datetime.utcnow().timestamp())
-    reference = f"base10_{current_user.id}_{timestamp}"
-    
-    # In production, integrate with Paystack API
-    # For now, return mock response
-    mock_authorization_url = f"https://checkout.paystack.com/mock/{reference}"
-    
-    # TODO: In production:
-    # 1. Call Paystack API to initialize transaction
-    # 2. Store transaction in database with "pending" status
-    # 3. Return actual authorization_url from Paystack
-    
-    """
-    Example Paystack integration:
-    
-    import requests
-    
-    paystack_secret = settings.PAYSTACK_SECRET_KEY
-    url = "https://api.paystack.co/transaction/initialize"
-    
+    client_reference = f"base10_{current_user.id}_{timestamp}"
+
     payload = {
-        "email": request.email,
-        "amount": plan.price * 100,  # Convert to kobo
+        "amount": str(plan.price),
         "currency": request.currency.value,
-        "reference": reference,
-        "callback_url": f"{settings.BASE_URL}/billing/callback",
-        "metadata": {
-            "user_id": current_user.id,
-            "plan_id": plan.id,
-            "custom_fields": []
-        }
+        "customer_name": current_user.full_name or current_user.username or "Base10 Student",
+        "customer_mobile": current_user.phone_number or "",
+        "success_url": request.success_url,
+        "error_url": request.error_url,
+        "client_reference": client_reference,
+        "provider": request.provider,
     }
-    
-    headers = {
-        "Authorization": f"Bearer {paystack_secret}",
-        "Content-Type": "application/json"
-    }
-    
-    response = requests.post(url, json=payload, headers=headers)
-    data = response.json()
-    
-    if response.status_code == 200 and data["status"]:
-        return InitializePaymentResponse(
-            authorization_url=data["data"]["authorization_url"],
-            reference=data["data"]["reference"],
-            access_code=data["data"]["access_code"]
+
+    try:
+        response = await _hpg_initiate_collection(payload)
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Could not reach payment provider")
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Payment provider error: {response.text}"
         )
-    """
-    
+
+    hpg_data = response.json()
+
+    transaction = Transaction(
+        client_reference=client_reference,
+        transaction_id=hpg_data.get("transaction_id"),
+        user_id=current_user.id,
+        plan_id=plan.id,
+        amount=str(plan.price),
+        currency=request.currency.value,
+        provider=hpg_data.get("provider", request.provider),
+        status=hpg_data.get("status", "PENDING"),
+    )
+    db.add(transaction)
+    db.commit()
+
     return InitializePaymentResponse(
-        authorization_url=mock_authorization_url,
-        reference=reference,
-        access_code="mock_access_code"
+        transaction_id=hpg_data["transaction_id"],
+        status=hpg_data.get("status", "PENDING"),
+        redirect_url=hpg_data["redirect_url"],
+        provider=hpg_data.get("provider", request.provider),
+        created_at=hpg_data.get("created_at", datetime.utcnow().isoformat()),
     )
 
 
 @router.post("/webhook")
 async def payment_webhook(
     request: Request,
-    x_paystack_signature: Optional[str] = Header(None),
+    x_hexai_signature: Optional[str] = Header(None, alias="x-hexai-signature"),
+    wave_signature: Optional[str] = Header(None, alias="wave-signature"),
     db: Session = Depends(get_db)
 ):
     """
-    Webhook endpoint for Paystack/Flutterwave payment notifications.
-    
-    **Security**: Validates webhook signature to ensure requests come from payment provider.
-    
+    Webhook endpoint for HPG payment notifications.
+
+    **Security**: Validates the HMAC-SHA256 signature (x-hexai-signature,
+    legacy alias wave-signature) against the raw request body before
+    processing.
+
     **Events Handled**:
-    - `charge.success`: Payment completed successfully
-    - `subscription.create`: Subscription created
-    - `subscription.disable`: Subscription cancelled
-    
-    **Flow**:
-    1. Paystack sends webhook when payment succeeds
-    2. We verify the signature
-    3. Update user's subscription status in database
-    4. Send confirmation email
-    
-    **Configure in Paystack Dashboard**:
-    - Webhook URL: `https://api.base10.edu/api/v1/billing/webhook`
-    - Events: charge.success, subscription.*
+    - `payment.succeeded` / `payment.failed` / `payment.expired` / `payment.cancelled`
+    - `payout.*` events are acknowledged but not processed (payouts aren't
+      used by this app)
     """
-    # Get raw body for signature verification
     body = await request.body()
-    
-    # Verify Paystack signature
-    if x_paystack_signature:
-        # TODO: Get from settings
-        paystack_secret = getattr(settings, 'PAYSTACK_SECRET_KEY', 'test_secret')
-        
-        computed_signature = hmac.new(
-            paystack_secret.encode('utf-8'),
-            body,
-            hashlib.sha512
-        ).hexdigest()
-        
-        if computed_signature != x_paystack_signature:
-            raise HTTPException(status_code=401, detail="Invalid signature")
-    
-    # Parse webhook payload
+    signature = x_hexai_signature or wave_signature
+
+    if not settings.HPG_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Billing is not configured")
+
+    if not signature:
+        raise HTTPException(status_code=401, detail="Missing webhook signature")
+
+    computed_signature = hmac.new(
+        settings.HPG_WEBHOOK_SECRET.encode("utf-8"),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(computed_signature, signature):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
     payload = await request.json()
-    event = payload.get("event")
+    event = payload.get("event", "")
     data = payload.get("data", {})
-    
-    # Handle charge success
-    if event == "charge.success":
-        reference = data.get("reference")
-        metadata = data.get("metadata", {})
-        user_id = metadata.get("user_id")
-        plan_id = metadata.get("plan_id")
-        
-        if user_id and plan_id:
-            # Find user
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                # Get plan details
-                plan = next((p for p in PLANS if p.id == plan_id), None)
-                if plan:
-                    # Update user subscription
-                    # TODO: Add subscription fields to User model
-                    # user.subscription_plan = plan_id
-                    # user.subscription_expires = datetime.utcnow() + timedelta(days=plan.duration_days)
-                    # user.subscription_status = "active"
-                    # db.commit()
-                    
-                    # TODO: Send confirmation email
-                    pass
-    
-    # Handle subscription events
-    elif event in ["subscription.create", "subscription.enable"]:
-        # Subscription activated
-        pass
-    
-    elif event == "subscription.disable":
-        # Subscription cancelled
-        pass
-    
+
+    if event.startswith("payout."):
+        # Payouts aren't used by this app; acknowledge and skip.
+        return {"status": "success", "message": "Webhook processed"}
+
+    reference = data.get("reference")
+    if not reference:
+        return {"status": "success", "message": "Webhook processed"}
+
+    transaction = db.query(Transaction).filter(
+        Transaction.client_reference == reference
+    ).first()
+
+    if not transaction:
+        return {"status": "success", "message": "Webhook processed"}
+
+    # Idempotency: a terminal status is never overwritten by a redelivery.
+    if transaction.status in ("SUCCEEDED", "FAILED", "EXPIRED", "CANCELLED"):
+        return {"status": "success", "message": "Webhook processed"}
+
+    new_status = data.get("status")
+    completed_at = data.get("completed_at")
+
+    if event == "payment.succeeded":
+        transaction.status = "SUCCEEDED"
+        transaction.transaction_id = data.get("id", transaction.transaction_id)
+        transaction.completed_at = datetime.utcnow()
+
+        user = db.query(User).filter(User.id == transaction.user_id).first()
+        plan = next((p for p in PLANS if p.id == transaction.plan_id), None)
+        if user and plan:
+            user.subscription_plan = plan.id
+            user.subscription_status = "active"
+            user.subscription_expires_at = datetime.utcnow() + timedelta(days=plan.duration_days)
+
+    elif event == "payment.failed":
+        transaction.status = "FAILED"
+    elif event == "payment.expired":
+        transaction.status = "EXPIRED"
+    elif event == "payment.cancelled":
+        transaction.status = "CANCELLED"
+    elif new_status:
+        transaction.status = new_status
+
+    db.commit()
+
     return {"status": "success", "message": "Webhook processed"}
 
 
@@ -361,30 +335,25 @@ async def get_subscription(
 ):
     """
     Get current user's subscription status.
-    
+
     **Returns**:
     - Current plan
     - Expiration date
-    - Features available
-    - Usage quotas
+    - Status
     """
-    # TODO: Query from user subscription fields
-    # For now, return free plan
-    
+    plan_id = current_user.subscription_plan or "free"
+    plan = next((p for p in PLANS if p.id == plan_id), PLANS[0])
+
     return {
         "user_id": current_user.id,
-        "plan": "free",
-        "plan_name": "Basic",
-        "status": "active",
-        "started_at": datetime.utcnow().isoformat(),
-        "expires_at": None,  # Free plan doesn't expire
-        "features": {
-            "ai_explanations_remaining": 5,
-            "ai_chat_available": False,
-            "image_quality": "medium",
-            "ads_enabled": True
-        },
-        "can_upgrade": True
+        "plan": plan.id,
+        "plan_name": plan.name,
+        "status": current_user.subscription_status or "active",
+        "expires_at": (
+            current_user.subscription_expires_at.isoformat()
+            if current_user.subscription_expires_at else None
+        ),
+        "can_upgrade": plan.id != "school",
     }
 
 
@@ -395,15 +364,20 @@ async def cancel_subscription(
 ):
     """
     Cancel user's subscription.
-    
-    **Note**: Access continues until end of billing period.
+
+    **Note**: Access continues until end of billing period
+    (subscription_expires_at), matching HPG's collection-based billing
+    (there is no recurring subscription to disable on HPG's side).
     """
-    # TODO: Call Paystack API to disable subscription
-    # TODO: Update user record
-    
+    current_user.subscription_status = "cancelled"
+    db.commit()
+
     return {
         "message": "Subscription cancelled",
-        "access_until": (datetime.utcnow() + timedelta(days=30)).isoformat()
+        "access_until": (
+            current_user.subscription_expires_at.isoformat()
+            if current_user.subscription_expires_at else None
+        ),
     }
 
 
@@ -414,12 +388,27 @@ async def get_transactions(
 ):
     """
     Get user's payment transaction history.
-    
+
     **Returns**: List of past payments with status
     """
-    # TODO: Query from transactions table
-    
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id
+    ).order_by(Transaction.created_at.desc()).all()
+
     return {
         "user_id": current_user.id,
-        "transactions": []
+        "transactions": [
+            {
+                "client_reference": t.client_reference,
+                "transaction_id": t.transaction_id,
+                "plan_id": t.plan_id,
+                "amount": t.amount,
+                "currency": t.currency,
+                "provider": t.provider,
+                "status": t.status,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+            }
+            for t in transactions
+        ]
     }

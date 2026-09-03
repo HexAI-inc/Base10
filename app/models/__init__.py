@@ -11,6 +11,7 @@ from app.models.classroom import Classroom, Assignment, ClassroomMaterial
 from app.models.asset import Asset
 from app.models.student_profile import StudentProfile, TeacherMessage
 from app.models.marketing import WaitlistLead
+from app.models.transaction import Transaction
 
 # Export all models for alembic autogenerate
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "StudentProfile",
     "TeacherMessage",
     "WaitlistLead",
+    "Transaction",
 ]

@@ -126,12 +126,31 @@ def test_billing_initialize_requires_auth():
     assert response.status_code == 401
 
 
-def test_billing_webhook_accepts_post():
-    """Webhook should accept POST requests."""
+def test_billing_webhook_rejects_unsigned_requests():
+    """Webhook must reject requests without a valid HPG signature (not silently succeed)."""
     response = client.post("/api/v1/billing/webhook", json={
-        "event": "charge.success",
+        "event": "payment.succeeded",
         "data": {}
     })
+    assert response.status_code in (401, 503)
+
+
+def test_billing_webhook_accepts_valid_signature(monkeypatch, test_db):
+    """A correctly signed webhook is accepted and processed."""
+    import hashlib
+    import hmac
+    import json
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "HPG_WEBHOOK_SECRET", "whsec_test")
+    body = json.dumps({"event": "payment.succeeded", "data": {"reference": "unknown-ref"}}).encode("utf-8")
+    signature = hmac.new(b"whsec_test", body, hashlib.sha256).hexdigest()
+
+    response = client.post(
+        "/api/v1/billing/webhook",
+        content=body,
+        headers={"x-hexai-signature": signature, "Content-Type": "application/json"},
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 

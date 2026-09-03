@@ -79,6 +79,11 @@ class Settings(BaseSettings):
     
     # Push Notifications (Phase 2)
     FIREBASE_CREDENTIALS_PATH: str = ""
+
+    # Billing (HPG - HexAI Payment Gateway)
+    HPG_API_KEY: str = ""
+    HPG_WEBHOOK_SECRET: str = ""
+    HPG_BASE_URL: str = "https://api.hpg.hexai.gm/api/v1"
     
     # AI
     GOOGLE_API_KEY: str = ""
