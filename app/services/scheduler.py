@@ -74,12 +74,10 @@ def check_and_reset_streaks():
             
             if attempts_yesterday == 0:
                 # Streak broken! Reset to 0
-                # TODO: Add streak field to User model
-                # user.study_streak = 0
-                # db.commit()
-                
+                user.study_streak = 0
+
                 streaks_reset += 1
-                
+
                 # Send reminder notification (LOW priority)
                 comms.send_notification(
                     user_id=user.id,
@@ -89,11 +87,12 @@ def check_and_reset_streaks():
                     body="You didn't practice yesterday. Start a new streak today! 💪",
                     user_phone=user.phone_number,
                     user_email=user.email,
-                    has_app_installed=True  # TODO: Track in User model
+                    has_app_installed=user.has_app_installed
                 )
             else:
                 streaks_maintained += 1
-        
+
+        db.commit()
         logger.info(f"✅ Streaks checked: {streaks_maintained} maintained, {streaks_reset} reset")
     
     except Exception as e:
@@ -135,7 +134,7 @@ def send_daily_review_reminders():
                 body=f"You have {due_count} questions ready for review. Practice now to boost retention!",
                 user_phone=user.phone_number,
                 user_email=user.email,
-                has_app_installed=True
+                has_app_installed=user.has_app_installed
             )
         
         logger.info(f"✅ Review reminders sent to {len(users_with_reviews)} users")
@@ -267,7 +266,7 @@ def generate_monthly_reports():
                 title=f"Your {datetime.utcnow().strftime('%B')} Progress Report 📊",
                 body=f"Great work! You answered {total_attempts} questions with {accuracy:.1f}% accuracy. Keep it up! 🎉",
                 user_email=user.email,
-                has_app_installed=True
+                has_app_installed=user.has_app_installed
             )
             
             reports_generated += 1
