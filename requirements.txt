@@ -49,5 +49,5 @@ apscheduler==3.10.4  # Cron jobs for streaks, reminders, leaderboards
 
 # Testing
 pytest==7.4.4
-pytest-asyncio==1.4.0
+pytest-asyncio==0.23.8
 httpx==0.26.0
