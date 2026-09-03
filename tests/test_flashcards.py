@@ -13,7 +13,7 @@ async def test_create_flashcard_deck(client: AsyncClient, teacher_headers):
         json={
             "name": "Test Physics Deck",
             "description": "Basic physics concepts",
-            "subject": "physics",
+            "subject": "Physics",
             "difficulty": "medium"
         },
         headers=teacher_headers
@@ -36,7 +36,7 @@ async def test_create_flashcard(client: AsyncClient, teacher_headers, test_db):
         json={
             "name": "Test Deck",
             "description": "Test deck",
-            "subject": "physics",
+            "subject": "Physics",
             "difficulty": "medium"
         },
         headers=teacher_headers

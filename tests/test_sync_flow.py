@@ -211,7 +211,10 @@ async def test_sync_pull_delta(
     # Pull questions using POST with body (matching the actual endpoint)
     pull_res = await client.post(
         "/api/v1/sync/pull",
-        json={"last_sync_timestamp": last_sync.isoformat()},
+        json={
+            "last_sync_timestamp": last_sync.isoformat(),
+            "limit": 50
+        },
         headers=auth_headers
     )
     
