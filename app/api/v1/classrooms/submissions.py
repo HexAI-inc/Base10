@@ -70,8 +70,45 @@ async def grade_submission(
     submission.grade = grade_data.grade
     submission.feedback = grade_data.feedback
     submission.graded_at = func.now()
-    submission.graded_by_id = user.id
-    
+    submission.is_graded = 1
+    submission.status = "graded"
+
     db.commit()
-    
+
     return {"message": "Submission graded successfully"}
+
+
+@router.get("/assignments/{assignment_id}/submissions")
+async def list_submissions(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """List all submissions for an assignment (Teacher only)."""
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    classroom = assignment.classroom
+    if classroom.teacher_id != user.id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only the teacher can view submissions")
+
+    submissions = db.query(Submission).filter(Submission.assignment_id == assignment_id).all()
+
+    return [
+        {
+            "id": s.id,
+            "assignment_id": s.assignment_id,
+            "student_id": s.student_id,
+            "student_name": s.student.full_name or s.student.username if s.student else None,
+            "content_text": s.content_text,
+            "attachment_url": s.attachment_url,
+            "grade": s.grade,
+            "feedback": s.feedback,
+            "status": s.status,
+            "is_graded": bool(s.is_graded),
+            "submitted_at": s.submitted_at.isoformat() if s.submitted_at else None,
+            "graded_at": s.graded_at.isoformat() if s.graded_at else None,
+        }
+        for s in submissions
+    ]

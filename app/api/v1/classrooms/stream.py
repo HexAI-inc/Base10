@@ -60,5 +60,50 @@ async def create_stream_post(
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    
+
     return new_post
+
+
+@router.post("/{classroom_id}/stream/{post_id}/comment", response_model=StreamPostResponse, status_code=status.HTTP_201_CREATED)
+async def comment_on_post(
+    classroom_id: int,
+    post_id: int,
+    post_data: StreamPostCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Comment on a classroom stream post."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+
+    parent_post = db.query(ClassroomPost).filter(
+        ClassroomPost.id == post_id,
+        ClassroomPost.classroom_id == classroom_id
+    ).first()
+    if not parent_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    from app.models.classroom import classroom_students
+    is_student = db.query(classroom_students).filter(
+        classroom_students.c.classroom_id == classroom_id,
+        classroom_students.c.student_id == user.id
+    ).first()
+
+    if classroom.teacher_id != user.id and not is_student:
+        raise HTTPException(status_code=403, detail="Not a member of this classroom")
+
+    comment = ClassroomPost(
+        classroom_id=classroom_id,
+        author_id=user.id,
+        content=post_data.content,
+        attachment_url=post_data.attachment_url,
+        parent_post_id=post_id,
+        post_type="comment"
+    )
+
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return comment

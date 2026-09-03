@@ -161,8 +161,10 @@ class AssetCreate(AssetBase):
 class AssetResponse(AssetBase):
     """Schema for asset responses."""
     id: int
+    status: str = "approved"
+    review_notes: Optional[str] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

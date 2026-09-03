@@ -53,5 +53,52 @@ async def create_material(
     db.add(new_material)
     db.commit()
     db.refresh(new_material)
-    
+
     return new_material
+
+
+def _get_owned_material(db: Session, material_id: int, user: User) -> ClassroomMaterial:
+    material = db.query(ClassroomMaterial).filter(ClassroomMaterial.id == material_id).first()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+
+    classroom = db.query(Classroom).filter(Classroom.id == material.classroom_id).first()
+    if classroom.teacher_id != user.id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only the teacher can modify this material")
+
+    return material
+
+
+@router.put("/materials/{material_id}", response_model=MaterialResponse)
+async def update_material(
+    material_id: int,
+    material_data: MaterialUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Update classroom material (Teacher only)."""
+    material = _get_owned_material(db, material_id, user)
+
+    update_data = material_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(material, field, value)
+
+    db.commit()
+    db.refresh(material)
+
+    return material
+
+
+@router.delete("/materials/{material_id}")
+async def delete_material(
+    material_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Delete classroom material (Teacher only)."""
+    material = _get_owned_material(db, material_id, user)
+
+    db.delete(material)
+    db.commit()
+
+    return {"message": "Material deleted successfully"}

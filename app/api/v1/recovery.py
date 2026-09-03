@@ -23,6 +23,10 @@ class ResetPasswordRequest(BaseModel):
     otp_code: str    # 4-digit code
     new_password: str
 
+class VerifyOtpRequest(BaseModel):
+    identifier: str  # Phone number or email
+    otp_code: str    # 4-digit code
+
 
 @router.post("/forgot-password", status_code=200)
 async def forgot_password(
@@ -166,15 +170,17 @@ async def reset_password(
 
 @router.post("/verify-otp", status_code=200)
 async def verify_otp(
-    identifier: str,
-    otp_code: str,
+    request: VerifyOtpRequest,
     db: Session = Depends(get_db)
 ):
     """
     Verify OTP without resetting password (for phone verification).
     """
+    identifier = request.identifier
+    otp_code = request.otp_code
+
     user = db.query(User).filter(
-        (User.phone_number == identifier) | 
+        (User.phone_number == identifier) |
         (User.email == identifier)
     ).first()
     

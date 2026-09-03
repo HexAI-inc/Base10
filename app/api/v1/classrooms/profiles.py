@@ -38,6 +38,10 @@ class SendMessageRequest(BaseModel):
     message_type: str = Field(default="general")
 
 
+class AIContextRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=1000)
+
+
 @router.get("/{classroom_id}/students/{student_id}/profile")
 async def get_student_profile(
     classroom_id: int, 
@@ -287,5 +291,101 @@ async def send_student_message(
         )
     except Exception as e:
         logger.error(f"❌ Failed to send message notification: {e}")
-    
+
     return {"message": "Message sent successfully"}
+
+
+@router.get("/{classroom_id}/students/{student_id}/messages")
+async def get_student_messages(
+    classroom_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Get the message history a teacher has sent to a student in this classroom."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+
+    if classroom.teacher_id != user.id and user.id != student_id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized to view these messages")
+
+    messages = db.query(TeacherMessage).filter(
+        TeacherMessage.classroom_id == classroom_id,
+        TeacherMessage.student_id == student_id
+    ).order_by(TeacherMessage.sent_at.desc()).all()
+
+    return [
+        {
+            "id": m.id,
+            "subject": m.subject,
+            "message": m.message,
+            "message_type": m.message_type,
+            "is_read": bool(m.is_read),
+            "sent_at": m.sent_at.isoformat() if m.sent_at else None,
+            "read_at": m.read_at.isoformat() if m.read_at else None,
+        }
+        for m in messages
+    ]
+
+
+@router.post("/{classroom_id}/students/{student_id}/ai-context")
+async def get_student_ai_context(
+    classroom_id: int,
+    student_id: int,
+    payload: AIContextRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Ask the AI teaching assistant a question about a specific student, using
+    the teacher's notes (StudentProfile.ai_context) as grounding context."""
+    from app.services import ai_service
+
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+
+    if classroom.teacher_id != user.id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only the classroom teacher can use this")
+
+    student = db.query(User).filter(User.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if not ai_service.GEMINI_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI assistant is currently unavailable")
+
+    profile = db.query(StudentProfile).filter(
+        StudentProfile.classroom_id == classroom_id,
+        StudentProfile.student_id == student_id
+    ).first()
+
+    context_parts = [f"Student: {student.full_name or student.username}, classroom: {classroom.name}."]
+    if profile:
+        if profile.notes:
+            context_parts.append(f"Teacher notes: {profile.notes}")
+        if profile.strengths:
+            context_parts.append(f"Strengths: {profile.strengths}")
+        if profile.weaknesses:
+            context_parts.append(f"Weaknesses: {profile.weaknesses}")
+        if profile.learning_style:
+            context_parts.append(f"Learning style: {profile.learning_style}")
+        if profile.ai_context:
+            context_parts.append(f"Additional context: {profile.ai_context}")
+
+    prompt = (
+        "\n".join(context_parts)
+        + f"\n\nTeacher's question about this student: {payload.question}"
+        + "\n\nProvide a concise, actionable answer for the teacher:"
+    )
+
+    try:
+        response = ai_service.model.generate_content(prompt)
+        return {
+            "answer": response.text,
+            "student_id": student_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"❌ Student AI context error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate response")

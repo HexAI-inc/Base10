@@ -182,6 +182,26 @@ async def update_classroom(
     return classroom
 
 
+@router.delete("/{classroom_id}")
+async def delete_classroom(
+    classroom_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Delete a classroom (Teacher only)."""
+    classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+
+    if classroom.teacher_id != user.id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only the teacher can delete this classroom")
+
+    db.delete(classroom)
+    db.commit()
+
+    return {"message": "Classroom deleted successfully"}
+
+
 @router.get("/{classroom_id}/analytics", response_model=ClassroomAnalytics)
 async def get_classroom_analytics(
     classroom_id: int,

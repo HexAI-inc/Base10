@@ -56,5 +56,52 @@ async def create_assignment(
     db.add(new_assignment)
     db.commit()
     db.refresh(new_assignment)
-    
+
     return new_assignment
+
+
+def _get_owned_assignment(db: Session, assignment_id: int, user: User) -> Assignment:
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    classroom = db.query(Classroom).filter(Classroom.id == assignment.classroom_id).first()
+    if classroom.teacher_id != user.id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only the teacher can modify this assignment")
+
+    return assignment
+
+
+@router.put("/assignments/{assignment_id}", response_model=AssignmentResponse)
+async def update_assignment(
+    assignment_id: int,
+    assignment_data: AssignmentUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Update an assignment (Teacher only)."""
+    assignment = _get_owned_assignment(db, assignment_id, user)
+
+    update_data = assignment_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(assignment, field, value)
+
+    db.commit()
+    db.refresh(assignment)
+
+    return assignment
+
+
+@router.delete("/assignments/{assignment_id}")
+async def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Delete an assignment (Teacher only)."""
+    assignment = _get_owned_assignment(db, assignment_id, user)
+
+    db.delete(assignment)
+    db.commit()
+
+    return {"message": "Assignment deleted successfully"}

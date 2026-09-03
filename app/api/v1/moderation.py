@@ -1,6 +1,7 @@
 """Admin Content Moderation API."""
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 
@@ -145,6 +146,33 @@ async def list_assets(
         query = query.filter(Asset.asset_type == asset_type)
     
     return query.limit(limit).all()
+
+class AssetReviewRequest(BaseModel):
+    status: str  # "approved" or "rejected"
+    notes: Optional[str] = None
+
+
+@router.post("/assets/{asset_id}/review")
+async def review_asset(
+    asset_id: int,
+    review: AssetReviewRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Approve or reject an asset (Admin only)."""
+    if review.status not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail="status must be 'approved' or 'rejected'")
+
+    asset = db.query(Asset).filter(Asset.id == asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    asset.status = review.status
+    asset.review_notes = review.notes
+    db.commit()
+
+    return {"message": f"Asset {review.status}", "asset_id": asset_id}
+
 
 @router.put("/assets/{asset_id}/metadata")
 async def update_asset_metadata(
