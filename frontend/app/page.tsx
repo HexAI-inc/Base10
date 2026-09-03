@@ -91,8 +91,8 @@ export default function LandingPage() {
             />
           </div>
           
-          <div className="relative bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-2xl rounded-full px-8 py-3 z-10 border border-white/20 shadow-[inset_0_0_20px_rgba(255,255,255,0.1)]">
-            <div className="grid grid-cols-3 items-center">
+          <div className="relative bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-2xl rounded-full px-4 md:px-8 py-3 z-10 border border-white/20 shadow-[inset_0_0_20px_rgba(255,255,255,0.1)]">
+            <div className="flex md:grid md:grid-cols-3 items-center justify-between gap-3">
               {/* Left: Links */}
               <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-300">
                 <a href="#features" className="hover:text-emerald-400 transition-colors">Features</a>
@@ -100,22 +100,22 @@ export default function LandingPage() {
               </div>
 
               {/* Center: Logo */}
-              <div className="flex justify-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center relative overflow-hidden">
-                    <span className="text-[#0F172A] font-black text-2xl">X</span>
-                    <span className="text-[#0F172A] font-black text-[10px] absolute bottom-1 right-1">10</span>
+              <div className="flex md:justify-center">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-emerald-500 flex items-center justify-center relative overflow-hidden shrink-0">
+                    <span className="text-[#0F172A] font-black text-lg md:text-2xl">X</span>
+                    <span className="text-[#0F172A] font-black text-[8px] md:text-[10px] absolute bottom-0.5 right-0.5 md:bottom-1 md:right-1">10</span>
                   </div>
-                  <span className="font-display font-black text-2xl tracking-tighter text-white">Base10</span>
+                  <span className="font-display font-black text-lg md:text-2xl tracking-tighter text-white whitespace-nowrap">Base10</span>
                 </div>
               </div>
 
               {/* Right: Actions */}
-              <div className="flex items-center justify-end gap-6">
+              <div className="flex items-center justify-end gap-3 md:gap-6">
                 <Link href="/login" className="hidden md:block text-sm font-bold text-slate-300 hover:text-emerald-400 transition-colors">Sign In</Link>
-                <a 
-                  href="#waitlist" 
-                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-2.5 rounded-full text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                <a
+                  href="#waitlist"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 md:px-6 md:py-2.5 rounded-full text-xs md:text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20 whitespace-nowrap shrink-0"
                 >
                   Join Waitlist
                 </a>
@@ -180,7 +180,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500"
+            className="hidden md:flex absolute bottom-10 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-slate-500"
           >
             <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Scroll to explore</span>
             <motion.div 

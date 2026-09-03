@@ -31,7 +31,7 @@ interface Question {
 function PracticeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -46,6 +46,7 @@ function PracticeContent() {
   const difficulties = ['Easy', 'Medium', 'Hard']
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
       return
@@ -54,7 +55,7 @@ function PracticeContent() {
     if (!showSubjectSelector) {
       loadQuestions()
     }
-  }, [user, router, subject, difficulty, showSubjectSelector])
+  }, [user, hasHydrated, router, subject, difficulty, showSubjectSelector])
 
   const loadQuestions = async () => {
     setLoading(true)

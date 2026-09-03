@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const { theme, setTheme } = useTheme()
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
@@ -51,10 +51,11 @@ export default function SettingsPage() {
   }, [theme])
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   const handleSave = async () => {
     setSaving(true)
@@ -91,7 +92,7 @@ export default function SettingsPage() {
     </div>
   )
 
-  if (!user) return null
+  if (!hasHydrated || !user) return null
 
   return (
     <AppLayout>

@@ -50,12 +50,14 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [subjectStats, setSubjectStats] = useState<SubjectStat[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!hasHydrated) return
+
     if (!user) {
       router.push('/login')
       return
@@ -102,9 +104,9 @@ export default function DashboardPage() {
     }
 
     fetchDashboard()
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
-  if (!user) {
+  if (!hasHydrated || !user) {
     return null
   }
 

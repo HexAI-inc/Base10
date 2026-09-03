@@ -20,19 +20,20 @@ interface Question {
 
 export default function FlashcardsPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
       return
     }
     loadFlashcards()
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   const loadFlashcards = async () => {
     setLoading(true)

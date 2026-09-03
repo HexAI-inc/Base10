@@ -54,7 +54,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,12 +64,13 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
       return
     }
     fetchProfile()
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   const fetchProfile = async () => {
     try {

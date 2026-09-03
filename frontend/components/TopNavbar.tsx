@@ -67,8 +67,8 @@ export default function TopNavbar({ onMenuClick, title }: TopNavbarProps) {
             )}
           </button>
 
-          {/* Theme Toggle */}
-          <div className="pl-2 border-l border-slate-100 dark:border-slate-800">
+          {/* Theme Toggle (already reachable from the mobile drawer sidebar below sm) */}
+          <div className="hidden sm:block pl-2 border-l border-slate-100 dark:border-slate-800">
             <ThemeToggle />
           </div>
         </div>

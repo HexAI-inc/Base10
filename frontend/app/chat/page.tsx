@@ -22,7 +22,7 @@ interface Message {
 
 export default function ChatPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -50,10 +50,11 @@ export default function ChatPage() {
   ]
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -161,29 +162,29 @@ export default function ChatPage() {
         {/* Chat Area */}
         <div className="flex-1 bg-white dark:bg-slate-950 rounded-[3rem] border-2 border-slate-50 dark:border-slate-900 shadow-sm overflow-hidden flex flex-col relative">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 scrollbar-hide">
             {messages.map((msg) => (
-              <div 
+              <div
                 key={msg.id}
                 className={cn(
-                  "flex gap-4 max-w-[85%]",
+                  "flex gap-2 sm:gap-4 max-w-[92%] sm:max-w-[85%]",
                   msg.role === 'user' ? "ml-auto flex-row-reverse" : ""
                 )}
               >
                 <div className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl",
-                  msg.role === 'user' 
-                    ? "bg-slate-900 dark:bg-emerald-600 text-white" 
+                  "w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl",
+                  msg.role === 'user'
+                    ? "bg-slate-900 dark:bg-emerald-600 text-white"
                     : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                 )}>
-                  {msg.role === 'user' ? <User className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
+                  {msg.role === 'user' ? <User className="w-4 h-4 sm:w-6 sm:h-6" /> : <Bot className="w-4 h-4 sm:w-6 sm:h-6" />}
                 </div>
-                
-                <div className="space-y-3">
+
+                <div className="space-y-3 min-w-0">
                   <div className={cn(
-                    "p-6 rounded-[2rem] text-lg leading-relaxed font-medium",
-                    msg.role === 'user' 
-                      ? "bg-slate-900 dark:bg-emerald-600 text-white rounded-tr-none" 
+                    "p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] text-base sm:text-lg leading-relaxed font-medium break-words",
+                    msg.role === 'user'
+                      ? "bg-slate-900 dark:bg-emerald-600 text-white rounded-tr-none"
                       : "bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-tl-none"
                   )}>
                     {msg.content}

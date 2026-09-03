@@ -22,9 +22,15 @@ export interface User {
 interface AuthState {
   token: string | null
   user: User | null
+  // True once zustand has finished reading persisted state from localStorage.
+  // Auth guards must wait for this before redirecting on a missing user -
+  // on first client render after a hard reload/direct nav, `user` is briefly
+  // null even for a logged-in visitor because hydration hasn't run yet.
+  hasHydrated: boolean
   setAuth: (token: string, user: any) => void
   setUser: (user: any) => void
   logout: () => void
+  setHasHydrated: (value: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
+      hasHydrated: false,
       setAuth: (token, user) => {
         localStorage.setItem('access_token', token)
         set({ token, user })
@@ -41,7 +48,13 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('access_token')
         set({ token: null, user: null })
       },
+      setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
-    { name: 'auth-storage' }
+    {
+      name: 'auth-storage',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
+    }
   )
 )

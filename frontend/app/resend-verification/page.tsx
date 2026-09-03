@@ -9,16 +9,17 @@ import { cn } from '@/lib/utils'
 
 export default function ResendVerificationPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   const handleResend = async () => {
     setLoading(true)
@@ -42,7 +43,7 @@ export default function ResendVerificationPage() {
     }
   }
 
-  if (!user) return null
+  if (!hasHydrated || !user) return null
 
   return (
     <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-6 relative overflow-hidden">

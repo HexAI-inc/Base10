@@ -25,12 +25,13 @@ interface LeaderboardEntry {
 
 export default function LeaderboardPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'weekly' | 'monthly'>('all')
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
 
   useEffect(() => {
+    if (!hasHydrated) return
     if (!user) {
       router.push('/login')
       return
@@ -48,7 +49,7 @@ export default function LeaderboardPage() {
       ])
       setLoading(false)
     }, 1000)
-  }, [user, router])
+  }, [user, hasHydrated, router])
 
   if (loading) {
     return (
