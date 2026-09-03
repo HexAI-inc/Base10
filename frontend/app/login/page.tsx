@@ -68,12 +68,26 @@ function AuthContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  // The two-panel sliding swap below is a desktop-only effect (mobile only
+  // ever shows the single form panel, hidden md:flex hides the other side) -
+  // without gating on this, toggling to signup on mobile animates the form's
+  // own x position to -100%, sliding the entire form off-screen with nothing
+  // to swap in behind it.
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     if (searchParams.get('mode') === 'signup') {
       setIsLogin(false)
     }
   }, [searchParams])
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+    setIsDesktop(mql.matches)
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
 
   // Login State
   const [loginData, setLoginData] = useState({ username: '', password: '' })
@@ -162,9 +176,9 @@ function AuthContent() {
         className="max-w-5xl w-full min-h-[700px] bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
       >
         {/* --- CONTENT SIDE (The one that flips) --- */}
-        <motion.div 
-          animate={{ 
-            x: isLogin ? '0%' : '100%',
+        <motion.div
+          animate={{
+            x: isDesktop && !isLogin ? '100%' : '0%',
           }}
           transition={{ type: "spring", stiffness: 50, damping: 15 }}
           className="hidden md:flex w-1/2 bg-gradient-to-br from-emerald-600 to-emerald-400 p-12 flex-col justify-between relative z-20"
@@ -206,9 +220,9 @@ function AuthContent() {
         </motion.div>
 
         {/* --- FORM SIDE --- */}
-        <motion.div 
-          animate={{ 
-            x: isLogin ? '0%' : '-100%',
+        <motion.div
+          animate={{
+            x: isDesktop && !isLogin ? '-100%' : '0%',
           }}
           transition={{ type: "spring", stiffness: 50, damping: 15 }}
           className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center relative z-10"
@@ -225,9 +239,9 @@ function AuthContent() {
             </p>
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {isLogin ? (
-              <motion.form 
+              <motion.form
                 key="login-form"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}

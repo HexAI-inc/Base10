@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { questionApi } from '@/lib/api'
@@ -41,6 +41,7 @@ function PracticeContent() {
   const [difficulty, setDifficulty] = useState<string>('Medium')
   const [showSubjectSelector, setShowSubjectSelector] = useState(true)
   const [showCalculator, setShowCalculator] = useState(false)
+  const questionStartRef = useRef<number>(Date.now())
 
   const subjects = ['Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Geography', 'Government', 'Civic Education', 'Financial Accounting']
   const difficulties = ['Easy', 'Medium', 'Hard']
@@ -71,6 +72,7 @@ function PracticeContent() {
       setQuestions(data)
       setCurrentIndex(0)
       setScore(0)
+      questionStartRef.current = Date.now()
     } catch (err: any) {
       if (err.response?.status === 422) {
         setError(`No questions available for ${subject} yet. Try Mathematics, Physics, or Biology.`)
@@ -88,21 +90,39 @@ function PracticeContent() {
   const handleAnswerSubmit = (selectedIndex: number) => {
     const currentQuestion = questions[currentIndex]
     const isCorrect = selectedIndex === currentQuestion.correct_index
+    const timeTakenMs = Date.now() - questionStartRef.current
 
     if (isCorrect) {
       setScore(score + 1)
     }
+
+    // Best-effort: record the attempt server-side so dashboard stats,
+    // streaks and spaced-repetition scheduling actually reflect practice.
+    // Not blocking the UI on this - if it's offline or fails, the student
+    // keeps going and just doesn't get credit for this one attempt (there's
+    // no offline queue/sync wired up on the frontend yet to retry later).
+    questionApi.submitAnswer({
+      question_id: currentQuestion.id,
+      selected_option: selectedIndex,
+      is_correct: isCorrect,
+      attempted_at: new Date().toISOString(),
+      time_taken_ms: timeTakenMs,
+    }).catch((err) => {
+      console.warn('Failed to record attempt:', err)
+    })
   }
 
   const nextQuestion = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1)
+      questionStartRef.current = Date.now()
     }
   }
 
   const prevQuestion = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1)
+      questionStartRef.current = Date.now()
     }
   }
 

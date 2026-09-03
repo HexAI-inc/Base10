@@ -64,8 +64,15 @@ export const questionApi = {
     const encodedSubject = encodeURIComponent(subject)
     return api.get(`/questions/practice/${encodedSubject}`, { params })
   },
-  submitAnswer: (data: { question_id: number; user_answer: string }) =>
-    api.post('/questions/submit', data),
+  submitAnswer: (data: {
+    question_id: number;
+    selected_option: number;
+    is_correct: boolean;
+    attempted_at: string;
+    device_id?: string;
+    time_taken_ms?: number;
+    confidence_level?: number;
+  }) => api.post('/questions/submit', data),
 }
 
 // AI endpoints
