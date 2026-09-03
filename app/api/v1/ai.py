@@ -73,7 +73,7 @@ async def explain_answer(
     
     # Check if student's answer is correct (shouldn't request explanation for correct answers)
     if request.student_answer == question.correct_index:
-        return ExplainResponse(
+        return schemas.ExplainResponse(
             explanation="Actually, your answer is correct! Great job understanding this concept.",
             correct_answer=question.correct_index,
             key_concepts=[question.topic],

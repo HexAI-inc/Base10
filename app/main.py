@@ -36,13 +36,16 @@ from app.api.v1 import (
 async def lifespan(app: FastAPI):
     """
     Startup/shutdown events for the application.
-    Creates database tables on startup.
+    Creates database tables on startup in development.
     Starts scheduler for automated engagement (streaks, reminders, leaderboards).
     """
     # Startup
-    print("🚀 Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database ready!")
+    if settings.ENVIRONMENT == "development":
+        print("🚀 Creating database tables (Development Mode)...")
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database ready!")
+    else:
+        print(f"🚀 Running in {settings.ENVIRONMENT} mode - skipping automatic table creation.")
     
     # Start scheduler for automated engagement
     try:
