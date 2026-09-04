@@ -30,7 +30,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
 
   // Student State
   const [studentData, setStudentData] = useState({
-    education_level: 'SSS3',
+    education_level: 'SS3',
     preferred_subjects: [] as string[],
     target_exam_date: new Date(new Date().getFullYear(), 5, 15).toISOString(),
     learning_style: 'visual',
@@ -43,12 +43,12 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
     subjects_taught: [] as string[],
     first_classroom_name: '',
     first_classroom_subject: 'Mathematics',
-    first_classroom_grade: 'SSS3'
+    first_classroom_grade: 'SS3'
   })
 
   const subjects = [
-    'Mathematics', 'English', 'Physics', 'Chemistry', 
-    'Biology', 'Economics', 'Government', 'Literature'
+    'Mathematics', 'English Language', 'Physics', 'Chemistry',
+    'Biology', 'Economics', 'Government', 'Literature in English'
   ]
 
   const handleStudentSubmit = async () => {
@@ -98,7 +98,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
               <p className="text-slate-500 dark:text-slate-400">Tell us about your current level</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {['JSS3', 'SSS1', 'SSS2', 'SSS3'].map((level) => (
+              {['JSS3', 'SS1', 'SS2', 'SS3'].map((level) => (
                 <button
                   key={level}
                   onClick={() => setStudentData({...studentData, education_level: level})}
@@ -166,7 +166,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
               {[
                 { id: 'visual', label: 'Visual (Images & Videos)', icon: '👁️' },
                 { id: 'auditory', label: 'Auditory (Listening)', icon: '👂' },
-                { id: 'reading', label: 'Reading & Writing', icon: '📖' },
+                { id: 'reading_writing', label: 'Reading & Writing', icon: '📖' },
                 { id: 'kinesthetic', label: 'Kinesthetic (Doing)', icon: '✋' }
               ].map((style) => (
                 <button
@@ -254,7 +254,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
                     onChange={(e) => setTeacherData({...teacherData, first_classroom_grade: e.target.value})}
                     className="w-full h-16 px-6 bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-blue-500/50 rounded-2xl outline-none text-slate-900 dark:text-slate-100 font-bold transition-all appearance-none"
                   >
-                    {['JSS3', 'SSS1', 'SSS2', 'SSS3'].map(g => <option key={g} value={g}>{g}</option>)}
+                    {['JSS3', 'SS1', 'SS2', 'SS3'].map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
               </div>

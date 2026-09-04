@@ -7,6 +7,7 @@ from typing import Optional, List
 from enum import Enum
 from app.db.session import get_db
 from app.models.user import User
+from app.models.enums import GradeLevel
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -216,8 +217,9 @@ async def update_profile(
         current_user.full_name = updates.full_name
     
     if updates.education_level is not None:
-        # Validate education level
-        valid_levels = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3", "WASSCE", "GABECE", "NECO"]
+        # Validate against the same GradeLevel enum the DB column enforces,
+        # so this check can never drift from what SQLAlchemy will accept.
+        valid_levels = [level.value for level in GradeLevel]
         if updates.education_level not in valid_levels:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

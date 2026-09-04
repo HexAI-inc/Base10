@@ -270,10 +270,14 @@ export default function ProfilePage() {
                     onChange={(e) => setEditData({...editData, education_level: e.target.value})}
                     className="w-full h-12 sm:h-16 px-6 sm:px-8 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-900 rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base focus:border-emerald-500/50 outline-none transition-all dark:text-white disabled:opacity-50 appearance-none"
                   >
-                    <option value="SSS1">SSS 1</option>
-                    <option value="SSS2">SSS 2</option>
-                    <option value="SSS3">SSS 3 / WASSCE Candidate</option>
-                    <option value="Graduate">Graduate</option>
+                    <option value="JSS1">JSS 1</option>
+                    <option value="JSS2">JSS 2</option>
+                    <option value="JSS3">JSS 3</option>
+                    <option value="SS1">SS 1</option>
+                    <option value="SS2">SS 2</option>
+                    <option value="SS3">SS 3 / WASSCE Candidate</option>
+                    <option value="University">University</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div className="space-y-1.5 sm:space-y-2">
@@ -284,10 +288,10 @@ export default function ProfilePage() {
                     onChange={(e) => setEditData({...editData, learning_style: e.target.value})}
                     className="w-full h-12 sm:h-16 px-6 sm:px-8 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-900 rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base focus:border-emerald-500/50 outline-none transition-all dark:text-white disabled:opacity-50 appearance-none"
                   >
-                    <option value="Visual">Visual Learner</option>
-                    <option value="Auditory">Auditory Learner</option>
-                    <option value="Reading">Reading/Writing</option>
-                    <option value="Kinesthetic">Kinesthetic Learner</option>
+                    <option value="visual">Visual Learner</option>
+                    <option value="auditory">Auditory Learner</option>
+                    <option value="reading_writing">Reading/Writing</option>
+                    <option value="kinesthetic">Kinesthetic Learner</option>
                   </select>
                 </div>
               </div>
