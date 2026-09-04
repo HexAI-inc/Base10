@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
       }
       setStep('verify')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to request reset. Please try again.')
+      setError(getErrorMessage(err, 'Failed to request reset. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
       })
       setStep('success')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid OTP or reset failed.')
+      setError(getErrorMessage(err, 'Invalid OTP or reset failed.'))
     } finally {
       setLoading(false)
     }

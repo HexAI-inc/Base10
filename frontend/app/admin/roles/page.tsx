@@ -6,6 +6,7 @@ import AppLayout from '@/components/AppLayout'
 import { adminApi } from '@/lib/api'
 import { Loader2, Shield, Search, Users } from 'lucide-react'
 import { useModalStore } from '@/store/modalStore'
+import { getErrorMessage } from '@/lib/utils'
 
 type Role = 'student' | 'teacher' | 'admin'
 
@@ -38,7 +39,7 @@ export default function AdminRolesPage() {
       setUsers(res.data || [])
     } catch (err: any) {
       showError(
-        err.response?.data?.detail || 'Failed to load users',
+        getErrorMessage(err, 'Failed to load users'),
         'Load Failed'
       )
     } finally {
@@ -82,7 +83,7 @@ export default function AdminRolesPage() {
           if (searchQuery) handleSearch()
         } catch (err: any) {
           showError(
-            err.response?.data?.detail || 'Failed to change role',
+            getErrorMessage(err, 'Failed to change role'),
             'Update Failed'
           )
         }
@@ -102,7 +103,7 @@ export default function AdminRolesPage() {
           if (searchQuery) handleSearch()
         } catch (err: any) {
           showError(
-            err.response?.data?.detail || 'Failed to delete user',
+            getErrorMessage(err, 'Failed to delete user'),
             'Delete Failed'
           )
         }

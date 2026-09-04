@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { classroomApi } from '@/lib/api'
 import { useModalStore } from '@/store/modalStore'
+import { getErrorMessage } from '@/lib/utils'
 import { X, Settings, Loader2, Save } from 'lucide-react'
 
 interface EditClassroomFormProps {
@@ -49,7 +50,7 @@ export default function EditClassroomForm({ classroom, onClose, onSuccess }: Edi
       showSuccess('Classroom updated successfully!', 'Updated')
       onSuccess(res.data)
     } catch (err: any) {
-      showError(err.response?.data?.detail || 'Failed to update classroom', 'Update Failed')
+      showError(getErrorMessage(err, 'Failed to update classroom'), 'Update Failed')
     } finally {
       setLoading(false)
     }

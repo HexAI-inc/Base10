@@ -8,7 +8,7 @@ import {
   Trophy, Medal, Crown, Sparkles, Shield, ChevronRight,
   Target, Loader2
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 interface LeaderboardEntry {
   rank: number
@@ -49,7 +49,7 @@ export default function LeaderboardPage() {
       }))
       setLeaderboard(entries)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load leaderboard. Try again shortly.')
+      setError(getErrorMessage(err, 'Failed to load leaderboard. Try again shortly.'))
       setLeaderboard([])
     } finally {
       setLoading(false)

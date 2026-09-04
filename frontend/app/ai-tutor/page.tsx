@@ -6,7 +6,7 @@ import { aiApi, authApi } from '@/lib/api'
 import { Loader2, ArrowLeft, Sparkles, Brain, BookOpen, Send, MessageSquare, ListChecks, X, ChevronRight } from 'lucide-react'
 import { useModalStore } from '@/store/modalStore'
 import { useAuthStore } from '@/store/authStore'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 import AIQuotaIndicator from '@/components/AIQuotaIndicator'
 import 'katex/dist/katex.min.css'
 import { InlineMath, BlockMath } from 'react-katex'
@@ -110,7 +110,7 @@ export default function AITutorPage() {
         )
       } else {
         showError(
-          error.response?.data?.detail || 'Failed to get response',
+          getErrorMessage(error, 'Failed to get response'),
           'AI Error'
         )
       }
@@ -149,7 +149,7 @@ export default function AITutorPage() {
           'Quota Exceeded'
         )
       } else {
-        showError(error.response?.data?.detail || 'Failed to generate quiz', 'Quiz Error')
+        showError(getErrorMessage(error, 'Failed to generate quiz'), 'Quiz Error')
       }
     } finally {
       setGeneratingQuiz(false)

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { adminApi } from '@/lib/api'
+import { getErrorMessage } from '@/lib/utils'
 import AppLayout from '@/components/AppLayout'
 import { 
   AlertCircle, 
@@ -78,7 +79,7 @@ export default function AdminQuestionsPage() {
       setQuestions(questions.filter(q => q.question_id !== questionId))
       alert('Question deleted successfully')
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete question')
+      alert(getErrorMessage(err, 'Failed to delete question'))
     } finally {
       setDeleteLoading(null)
     }

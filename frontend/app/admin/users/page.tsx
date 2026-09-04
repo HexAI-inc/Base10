@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { adminApi } from '@/lib/api'
+import { getErrorMessage } from '@/lib/utils'
 import AppLayout from '@/components/AppLayout'
 import { 
   Search, 
@@ -68,7 +69,7 @@ export default function AdminUsersPage() {
       setHasLoaded(true)
     } catch (err: any) {
       console.error('Failed to load users:', err)
-      setError(err.response?.data?.detail || 'Failed to load users. Please check your permissions.')
+      setError(getErrorMessage(err, 'Failed to load users. Please check your permissions.'))
     } finally {
       setLoading(false)
     }
@@ -91,7 +92,7 @@ export default function AdminUsersPage() {
       setHasLoaded(true)
     } catch (err: any) {
       console.error('Search failed:', err)
-      setError(err.response?.data?.detail || 'Search failed. Please try again.')
+      setError(getErrorMessage(err, 'Search failed. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -109,7 +110,7 @@ export default function AdminUsersPage() {
       setHasLoaded(true)
     } catch (err: any) {
       console.error('Failed to load top users:', err)
-      setError(err.response?.data?.detail || 'Failed to load top users.')
+      setError(getErrorMessage(err, 'Failed to load top users.'))
     } finally {
       setLoading(false)
     }
@@ -145,7 +146,7 @@ export default function AdminUsersPage() {
       }
       alert('User deactivated successfully')
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to deactivate user')
+      alert(getErrorMessage(err, 'Failed to deactivate user'))
     } finally {
       setActionLoading(null)
     }
@@ -166,7 +167,7 @@ export default function AdminUsersPage() {
       }
       alert('User activated successfully')
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to activate user')
+      alert(getErrorMessage(err, 'Failed to activate user'))
     } finally {
       setActionLoading(null)
     }
@@ -197,7 +198,7 @@ export default function AdminUsersPage() {
       setEditingUser(null)
       alert('User updated successfully')
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to update user')
+      alert(getErrorMessage(err, 'Failed to update user'))
     } finally {
       setActionLoading(null)
     }

@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronLeft, Check, Loader2,
   GraduationCap, School, Award, X
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 interface OnboardingWizardProps {
   onClose?: () => void
@@ -62,7 +62,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
       setUser(res.data)
       showSuccess('Welcome to Base10! You earned 50 points and the Welcome Pioneer badge.', 'Onboarding Complete')
     } catch (err: any) {
-      showError(err.response?.data?.detail || 'Failed to complete onboarding')
+      showError(getErrorMessage(err, 'Failed to complete onboarding'))
     } finally {
       setLoading(false)
     }
@@ -79,7 +79,7 @@ export default function OnboardingWizard({ onClose }: OnboardingWizardProps) {
       setUser(res.data)
       showSuccess('Welcome Educator! Your first classroom is ready.', 'Onboarding Complete')
     } catch (err: any) {
-      showError(err.response?.data?.detail || 'Failed to complete onboarding')
+      showError(getErrorMessage(err, 'Failed to complete onboarding'))
     } finally {
       setLoading(false)
     }

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { classroomApi } from '@/lib/api'
 import { useModalStore } from '@/store/modalStore'
 import { Plus, X, GraduationCap, BookOpen, Layers, Loader2, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function CreateClassroomForm({ onCreated }: { onCreated?: (c: any) => void }) {
   const [open, setOpen] = useState(false)
@@ -26,7 +26,7 @@ export default function CreateClassroomForm({ onCreated }: { onCreated?: (c: any
       showSuccess(`Classroom "${res.data.name}" created successfully!`, 'Classroom Created')
       if (onCreated) onCreated(res.data)
     } catch (err: any) {
-      showError(err.response?.data?.detail || 'Failed to create classroom', 'Error')
+      showError(getErrorMessage(err, 'Failed to create classroom'), 'Error')
     } finally {
       setLoading(false)
     }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import { classroomApi } from '@/lib/api'
 import { useModalStore } from '@/store/modalStore'
+import { getErrorMessage } from '@/lib/utils'
 import { ArrowLeft, Send, Calendar, Award, FileText, Loader2 } from 'lucide-react'
 
 export default function CreateAssignmentPage({ params }: any) {
@@ -38,7 +39,7 @@ export default function CreateAssignmentPage({ params }: any) {
       router.push(`/classrooms/${classroomId}/assignments`)
     } catch (err: any) {
       console.error(err)
-      showError(err.response?.data?.detail || 'Failed to create assignment', 'Error')
+      showError(getErrorMessage(err, 'Failed to create assignment'), 'Error')
     } finally {
       setLoading(false)
     }

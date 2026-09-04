@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { api } from '@/lib/api'
 import { CheckCircle2, XCircle, Loader2, Mail, Sparkles, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 function VerifyEmailContent() {
   const router = useRouter()
@@ -44,7 +44,7 @@ function VerifyEmailContent() {
       }, 3000)
     } catch (err: any) {
       setStatus('error')
-      setMessage(err.response?.data?.detail || 'Failed to verify email. The link may be invalid or expired.')
+      setMessage(getErrorMessage(err, 'Failed to verify email. The link may be invalid or expired.'))
     }
   }
 

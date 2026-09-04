@@ -5,7 +5,7 @@ import AppLayout from '@/components/AppLayout'
 import { classroomApi } from '@/lib/api'
 import { Loader2, ArrowLeft, User, MessageSquare, Brain, TrendingUp, BookOpen, Calendar, Send, X } from 'lucide-react'
 import { useModalStore } from '@/store/modalStore'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function StudentProfilePage({ params }: any) {
   const router = useRouter()
@@ -106,7 +106,7 @@ export default function StudentProfilePage({ params }: any) {
       setMessages(Array.isArray(msgData) ? msgData : [])
     } catch (err: any) {
       showError(
-        err.response?.data?.detail || 'Failed to send message',
+        getErrorMessage(err, 'Failed to send message'),
         'Send Failed'
       )
     } finally {
@@ -122,7 +122,7 @@ export default function StudentProfilePage({ params }: any) {
       await loadData()
     } catch (err: any) {
       showError(
-        err.response?.data?.detail || 'Failed to update profile',
+        getErrorMessage(err, 'Failed to update profile'),
         'Save Failed'
       )
     }
@@ -139,7 +139,7 @@ export default function StudentProfilePage({ params }: any) {
       setAiQuestion('')
     } catch (err: any) {
       showError(
-        err.response?.data?.detail || 'Failed to get AI advice',
+        getErrorMessage(err, 'Failed to get AI advice'),
         'AI Request Failed'
       )
     } finally {

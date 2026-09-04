@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, Sparkles, Loader2, Timer } from 'lucide-react'
 import { aiApi, authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { useModalStore } from '@/store/modalStore'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 import 'katex/dist/katex.min.css'
 import { InlineMath } from 'react-katex'
 
@@ -82,7 +82,7 @@ export default function QuestionCard({ question, timeRemaining, onSubmit }: Ques
         )
         setAiExplanation('Quota exceeded. Please upgrade your plan.')
       } else {
-        setAiExplanation(err.response?.data?.detail || 'Failed to get AI explanation. Please try again.')
+        setAiExplanation(getErrorMessage(err, 'Failed to get AI explanation. Please try again.'))
       }
     } finally {
       setLoadingExplanation(false)

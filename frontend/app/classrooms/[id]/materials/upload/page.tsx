@@ -5,7 +5,7 @@ import AppLayout from '@/components/AppLayout'
 import { classroomApi } from '@/lib/api'
 import { useModalStore } from '@/store/modalStore'
 import { ArrowLeft, Upload, FileText, Link as LinkIcon, Video, Loader2, Send } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function UploadMaterialPage({ params }: any) {
   const router = useRouter()
@@ -36,7 +36,7 @@ export default function UploadMaterialPage({ params }: any) {
       router.push(`/classrooms/${classroomId}/materials`)
     } catch (err: any) {
       console.error(err)
-      showError(err.response?.data?.detail || 'Failed to upload material', 'Error')
+      showError(getErrorMessage(err, 'Failed to upload material'), 'Error')
     } finally {
       setLoading(false)
     }

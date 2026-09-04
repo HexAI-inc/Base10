@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { classroomApi } from '@/lib/api'
 import { useModalStore } from '@/store/modalStore'
 import { Plus, X, Key, Loader2, Sparkles, ArrowRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function JoinClassroomForm({ onJoined }: { onJoined?: () => void }) {
   const [open, setOpen] = useState(false)
@@ -22,7 +22,7 @@ export default function JoinClassroomForm({ onJoined }: { onJoined?: () => void 
       showSuccess('You have successfully joined the classroom!', 'Welcome Aboard')
       if (onJoined) onJoined()
     } catch (err: any) {
-      showError(err.response?.data?.detail || 'Failed to join classroom. Please check the code.', 'Error')
+      showError(getErrorMessage(err, 'Failed to join classroom. Please check the code.'), 'Error')
     } finally {
       setLoading(false)
     }

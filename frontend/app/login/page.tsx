@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/lib/api'
+import { getErrorMessage } from '@/lib/utils'
 import { 
   Mail, 
   Lock, 
@@ -110,7 +111,7 @@ function AuthContent() {
       setAuth(access_token, user)
       router.push('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.')
+      setError(getErrorMessage(err, 'Login failed. Please check your credentials.'))
     } finally {
       setLoading(false)
     }
@@ -125,7 +126,7 @@ function AuthContent() {
       setIsLogin(true)
       setError('Registration successful! Please sign in.')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'))
     } finally {
       setLoading(false)
     }

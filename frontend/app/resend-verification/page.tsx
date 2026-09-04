@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { api } from '@/lib/api'
 import { Mail, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Sparkles, Send } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, getErrorMessage } from '@/lib/utils'
 
 export default function ResendVerificationPage() {
   const router = useRouter()
@@ -36,7 +36,7 @@ export default function ResendVerificationPage() {
         setMessage('Your email is already verified! Redirecting to dashboard...')
         setTimeout(() => router.push('/dashboard'), 2000)
       } else {
-        setMessage(err.response?.data?.detail || 'Failed to send verification email. Please try again.')
+        setMessage(getErrorMessage(err, 'Failed to send verification email. Please try again.'))
       }
     } finally {
       setLoading(false)
