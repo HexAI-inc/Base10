@@ -25,7 +25,7 @@ export default function NetworkBanner() {
   
   return (
     <div className={cn(
-      "fixed top-0 left-0 right-0 px-4 py-2 text-center text-xs font-bold z-[100] animate-in slide-in-from-top duration-300",
+      "px-4 py-2 text-center text-xs font-bold z-20 animate-in slide-in-from-top duration-300",
       status === 'offline' && "bg-orange-900 text-orange-200 border-b border-orange-800",
       status === 'syncing' && "bg-blue-900 text-blue-200 border-b border-blue-800",
       status === 'error' && "bg-red-900 text-red-200 border-b border-red-800"

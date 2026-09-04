@@ -5,7 +5,6 @@ import TopNavbar from '@/components/TopNavbar'
 import EmailVerificationBanner from '@/components/EmailVerificationBanner'
 import GlobalModal from '@/components/GlobalModal'
 import NetworkBanner from '@/components/NetworkBanner'
-import DataUsage from '@/components/DataUsage'
 import ScientificCalc from '@/components/ScientificCalc'
 import OnboardingWizard from '@/components/OnboardingWizard'
 import { usePathname } from 'next/navigation'
@@ -70,9 +69,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           }} 
         />
       )}
-      <NetworkBanner />
-      <EmailVerificationBanner />
-      
       {/* Sidebar - Desktop */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -93,8 +89,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content Area */}
       <div className="transition-all duration-300 lg:ml-72">
+        {/* Banners - inside the sidebar-offset column so their text/width
+            isn't clipped by (or painted over) the fixed desktop sidebar */}
+        <NetworkBanner />
+        <EmailVerificationBanner />
+
         {/* Top Navbar */}
-        <TopNavbar 
+        <TopNavbar
           onMenuClick={() => setMobileSidebarOpen(true)}
           title={getPageTitle()}
         />
@@ -103,11 +104,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <main className="min-h-[calc(100vh-5rem)] p-6 lg:p-10">
           {children}
         </main>
-
-        {/* Footer Info (Data Usage) */}
-        <footer className="fixed bottom-8 right-8 z-30">
-          <DataUsage />
-        </footer>
       </div>
 
       {/* Global Components */}

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from '@/components/AppLayout'
 import ClassroomCard from '@/components/classroom/ClassroomCard'
 import { classroomApi, authApi } from '@/lib/api'
-import { Loader2, GraduationCap, Plus, Search, Sparkles, BookOpen, Users, ArrowRight } from 'lucide-react'
+import { Loader2, GraduationCap, Plus, Search, BookOpen, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CreateClassroomForm from '@/components/classroom/CreateClassroomForm'
 import JoinClassroomForm from '@/components/classroom/JoinClassroomForm'
@@ -86,12 +86,10 @@ export default function ClassroomsPage() {
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
+          <div className="grid grid-cols-2 gap-6 mt-12">
             {[
               { label: 'Active Classes', value: classrooms.length, icon: BookOpen, color: 'text-blue-500' },
               { label: 'Total Students', value: classrooms.reduce((acc, c) => acc + (c.student_count || 0), 0), icon: Users, color: 'text-emerald-500' },
-              { label: 'Assignments', value: '12', icon: Sparkles, color: 'text-amber-500' },
-              { label: 'Completion', value: '84%', icon: ArrowRight, color: 'text-purple-500' },
             ].map((stat, i) => (
               <div key={i} className="bg-white dark:bg-slate-950 p-6 rounded-[2rem] border-2 border-slate-50 dark:border-slate-900 shadow-sm">
                 <div className="flex items-center gap-4">

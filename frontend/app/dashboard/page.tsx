@@ -189,7 +189,13 @@ export default function DashboardPage() {
             </h1>
             <div className="flex flex-col gap-4">
               <p className="text-lg font-medium text-slate-500 dark:text-slate-400 max-w-xl">
-                Your WAEC preparation is <span className="text-slate-900 dark:text-slate-100 font-bold">74% complete</span>. You're on track for an A1 in Mathematics.
+                {dashboardData && dashboardData.total_attempts > 0 ? (
+                  <>
+                    You've answered <span className="text-slate-900 dark:text-slate-100 font-bold">{dashboardData.total_attempts} questions</span> at <span className="text-slate-900 dark:text-slate-100 font-bold">{dashboardData.overall_accuracy}% accuracy</span>. Keep practicing to boost your WAEC readiness.
+                  </>
+                ) : (
+                  <>Let's get started — answer a few questions today to see your progress here.</>
+                )}
               </p>
               
               {/* Daily Goal Tracker */}

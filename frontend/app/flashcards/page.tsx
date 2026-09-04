@@ -13,9 +13,19 @@ import { cn } from '@/lib/utils'
 
 interface Question {
   id: number
-  question_text: string
-  correct_answer: string
+  content: string
+  options_json: string
+  correct_index: number
   subject?: string
+}
+
+function getCorrectAnswerText(question: Question): string {
+  try {
+    const options = JSON.parse(question.options_json)
+    return options[question.correct_index] ?? ''
+  } catch {
+    return ''
+  }
 }
 
 export default function FlashcardsPage() {
@@ -40,7 +50,8 @@ export default function FlashcardsPage() {
     setError('')
     try {
       const response = await questionApi.getRandomQuestions(undefined, 20)
-      setQuestions(response.data)
+      const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+      setQuestions(data)
       setCurrentIndex(0)
     } catch (err: any) {
       const errorMessage = typeof err.response?.data?.detail === 'string' 
@@ -124,9 +135,9 @@ export default function FlashcardsPage() {
         {/* Card Area */}
         <div className="relative mb-8 sm:mb-12">
           {questions[currentIndex] && (
-            <Flashcard 
-              front={questions[currentIndex].question_text}
-              back={questions[currentIndex].correct_answer}
+            <Flashcard
+              front={questions[currentIndex].content}
+              back={getCorrectAnswerText(questions[currentIndex])}
               context={questions[currentIndex].subject}
               onNext={handleNext}
               onPrevious={handlePrevious}
